@@ -1,0 +1,6 @@
+{
+  "name": "MyMoneyKeep",
+  "description": "快速語音與AI記帳應用，支援Google試算表格式、週/月/季/年消費報表分析與圓餅圖統計",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
