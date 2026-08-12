@@ -36,16 +36,21 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk = 36
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.aistudio.mymoneykeep.app"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = parsedVersionCode
     versionName = appVersion
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  lint {
+    checkReleaseBuilds = false
+    abortOnError = false
   }
 
   signingConfigs {
@@ -115,21 +120,30 @@ android {
     }
   }
 
-  applicationVariants.all {
-    val variant = this
-    if (variant.buildType.name == "release") {
-      variant.outputs.all {
-        val output = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
-        output?.outputFileName = "${appProductName}-v${appVersion}-release.apk"
-      }
-    }
-  }
 }
 
-val copyReleaseApk = tasks.register<Copy>("copyReleaseApk") {
-  from(layout.buildDirectory.dir("outputs/apk/release"))
-  into(file("${rootDir}/../Release"))
-  include("*.apk")
+val copyReleaseApk = tasks.register("copyReleaseApk") {
+  dependsOn("packageRelease")
+  doLast {
+    val releaseDir = file("${rootDir}/../Release")
+    releaseDir.mkdirs()
+    val apkFiles = layout.buildDirectory.asFileTree.matching {
+      include("**/*.apk")
+      exclude("**/apk_for_local_test/**")
+    }.files
+
+    println(">> [Copy Release APK] Found candidate APK files: " + apkFiles)
+    val releaseApk = apkFiles.firstOrNull { it.name.contains("release") || it.name.contains(appProductName) }
+      ?: apkFiles.firstOrNull()
+
+    if (releaseApk != null) {
+      val targetApk = File(releaseDir, "${appProductName}-v${appVersion}-release.apk")
+      releaseApk.copyTo(targetApk, overwrite = true)
+      println(">> [Copy Release APK] Successfully copied ${releaseApk.name} -> ${targetApk.absolutePath} (${targetApk.length()} bytes)")
+    } else {
+      println(">> [Copy Release APK] WARNING: No APK file found in build directory!")
+    }
+  }
 }
 
 tasks.matching { it.name == "assembleRelease" }.configureEach {

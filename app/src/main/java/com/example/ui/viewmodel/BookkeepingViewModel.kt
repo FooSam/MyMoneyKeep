@@ -436,9 +436,12 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
     fun autoCreateYearlySheetConfig() {
         val currentYear = java.text.SimpleDateFormat("yyyy", java.util.Locale.getDefault()).format(java.util.Date())
         val autoFolder = "MyMoneyKeep_雲端記帳本"
-        val autoTitle = "${currentYear}_MyMoneyKeep_記帳本.xlsx"
-        val autoId = "folder_MyMoneyKeep_${currentYear}_sheet"
-        syncManager.updateSheetConfig(autoTitle, autoId, autoFolder)
+        val autoTitle = "${currentYear}_MyMoneyKeep_記帳本"
+        syncManager.updateSheetConfig(autoTitle, "", autoFolder)
+    }
+
+    suspend fun syncToGoogleDrive(): Boolean {
+        return syncManager.syncToDrive(allTransactions.value, customCategories.value)
     }
 
     fun importCsv(csvContent: String) {

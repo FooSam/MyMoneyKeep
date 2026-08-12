@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -16,10 +17,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Settings
@@ -71,6 +74,8 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     var showRetainDataDialog by remember { mutableStateOf(false) }
     var showArchitectureSolutionDialog by remember { mutableStateOf(false) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showSyncErrorDialog by remember { mutableStateOf(false) }
+    var syncErrorDetail by remember { mutableStateOf("") }
 
     var langDropdownExpanded by remember { mutableStateOf(false) }
     var currDropdownExpanded by remember { mutableStateOf(false) }
@@ -544,11 +549,22 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     Button(
                                         onClick = {
                                             coroutineScope.launch {
-                                                val success = viewModel.syncManager.syncToDrive(allTransactions)
+                                                val success = viewModel.syncToGoogleDrive()
+                                                // 同步完成後讀取最新 accountState（已被 syncToDrive 更新）
+                                                val finalState = viewModel.googleAccountState.value
                                                 if (success) {
-                                                    Toast.makeText(context, "已成功同步至 Google 試算表『${accountState.driveFolder} / ${accountState.sheetTitle}』！", Toast.LENGTH_LONG).show()
+                                                    val syncTime = finalState.lastSyncTime
+                                                    if (syncTime.contains("已套用美化排版")) {
+                                                        Toast.makeText(context, "✅ 已成功同步並套用美化排版至『${finalState.driveFolder} / ${finalState.sheetTitle}』", Toast.LENGTH_LONG).show()
+                                                    } else {
+                                                        // 成功備份但排版降級為純文字，彈出診斷對話框提示
+                                                        syncErrorDetail = finalState.lastSyncError.ifBlank { "Google Sheets API 未能成功套用排版，已降級為純文字備援格式儲存至雲端。" }
+                                                        showSyncErrorDialog = true
+                                                    }
                                                 } else {
-                                                    Toast.makeText(context, "同步失敗，請確認網路連線或重新登入授權", Toast.LENGTH_LONG).show()
+                                                    // 同步失敗，彈出完整診斷對話框
+                                                    syncErrorDetail = finalState.lastSyncError.ifBlank { "同步失敗，請確認網路連線或重新登入授權。" }
+                                                    showSyncErrorDialog = true
                                                 }
                                             }
                                         },
@@ -765,6 +781,61 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
         )
     }
 
+    // Detailed Sync Error / Diagnostic Report Dialog
+    if (showSyncErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showSyncErrorDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Sync Report",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("雲端同步診斷報告", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 350.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = syncErrorDetail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(syncErrorDetail))
+                        Toast.makeText(context, "已將完整診斷報告複製至剪貼簿！", Toast.LENGTH_SHORT).show()
+                        showSyncErrorDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("複製報告並關閉")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSyncErrorDialog = false }) {
+                    Text("關閉")
+                }
+            }
+        )
+    }
+
     if (showCategoryDialog) {
         EditCategoryDialog(
             category = editingCategory,
@@ -848,45 +919,55 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     if (showArchitectureSolutionDialog) {
         AlertDialog(
             onDismissRequest = { showArchitectureSolutionDialog = false },
-            title = { Text("多年存檔與體驗優化 3 大可選方案") },
+            title = { Text("雲端記帳本架構與同步機制說明") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = "針對『試算表多年累積資料過大』與『手動貼上 ID 體驗繁瑣』問題，提供以下 3 種不同架構備案供您評估：",
+                        text = "MyMoneyKeep 採用安全、極速且直覺的雲端試算表架構，讓您在手機與電腦端都能輕鬆掌握財務狀況：",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "方案 A：【按年獨立分檔 + 按月工作表】（推薦）",
+                        text = "1. 專屬雲端空間集中管理",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "• 作法：每年自動建立『YYYY_MyMoneyKeep_記帳本』，內含 12 個月份分頁與年度總覽，並維護『00_歷史目錄總頁』。\n• 特點：完全符合您習慣的結構，單檔資料量適中，自動連結免填 ID。",
+                        text = "• 系統會在您的 Google 雲端硬碟中自動建立專屬『MyMoneyKeep_雲端記帳本』資料夾，集中存放歷年記帳試算表，乾淨不干擾個人其他檔案。",
                         style = MaterialTheme.typography.bodySmall
                     )
 
                     Text(
-                        text = "方案 B：【單一主表 + 年終自動封存至歷史庫】",
+                        text = "2. 按年度自動分檔，長年使用依然極速",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "• 作法：平時只維護『MyMoneyKeep_主記帳本』。跨年或滿 5,000 筆時，系統自動將舊資料搬移封存至『歷史資料庫』試算表。\n• 特點：主試算表永遠極致輕量，日常檢視極速無卡頓。",
+                        text = "• 系統自動依年度建立獨立的 Google 試算表（例如：『2026_MyMoneyKeep_記帳本』）。即使記帳多年，單一檔案依然輕巧流暢，檢視與搜尋零卡頓。",
                         style = MaterialTheme.typography.bodySmall
                     )
 
                     Text(
-                        text = "方案 C：【雲端 AppData 隱形資料庫 + 依需求一鍵匯出】",
+                        text = "3. 原生排版美化套版與自訂類別色彩",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "• 作法：平時備份至 Google Drive 隱藏 AppData 專屬區（純 JSON / CSV）。需要電腦檢視時，按『一鍵匯出 Google 試算表』。\n• 特點：Google Drive 目錄最乾淨、傳輸極速且隱私度最高。",
+                        text = "• 同步時自動套用整齊排版（第一列標題橫幅、欄位置中、收入/支出/小計靠右對齊）。\n• 試算表中的『標題』文字會即時依據您在 APP 內為各類別設定的專屬色彩顯示，一目了然。",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = "4. 無損還原與全自動連線",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "• 換機或重新安裝時，按『從試算表還原』即可將雲端資料完整下載回手機，且完全不會破壞雲端既有的精美排版與樣式。\n• 免手動填寫複雜 ID，只要登入 Google 帳號即可全自動完成所有串接。",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

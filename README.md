@@ -93,10 +93,12 @@
 
 ### 步驟 2：在 Google Cloud Console 建立 OAuth 用戶端
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 並建立新專案（或選擇既有專案）。
-2. 進入 **【API 和服務】** > **【已啟用的 API 和服務】**，點擊 **啟用 API 和服務**，搜尋並啟用 **`Google Drive API`**。
+2. 進入 **【API 和服務】** > **【已啟用的 API 和服務】**，點擊 **啟用 API 和服務**，搜尋並啟用以下兩項 API：
+   - **`Google Drive API`**（用於資料夾與檔案管理）
+   - **`Google Sheets API`**（用於試算表數據讀寫與原生美化排版）
 3. 進入 **【API 和服務】** > **【OAuth 同意畫面】**：
    - 依指示設定應用程式名稱與支援信箱。
-   - 於【範圍 (Scopes)】中新增 `https://www.googleapis.com/auth/drive.file`（僅需存取 App 所建立檔案的最小權限）。
+   - 於【範圍 (Scopes)】中新增 `https://www.googleapis.com/auth/drive` 與 `https://www.googleapis.com/auth/spreadsheets`。
    - 若發布狀態為「測試中」，請在【測試使用者】中加入您自己的 Google 帳號。
 4. 進入 **【API 和服務】** > **【憑證】**：
    - 點擊 **建立憑證** > **OAuth 用戶端 ID**。
@@ -105,7 +107,7 @@
    - **SHA-1 憑證指紋**：貼上步驟 1 取得的 SHA-1。
 5. 點擊 **建立** 儲存。
 
-> 💡 **備註**：完成設定後，您在本地編譯運行的 App 即可直接點擊 Google 登入，並與您的 Google Drive 進行同步備份！
+> 💡 **備註**：完成設定後，您在本地編譯運行的 App 即可直接點擊 Google 登入，並與您的 Google 試算表進行雲端同步與自動排版！
 
 ---
 
@@ -126,7 +128,7 @@
 
 ```powershell
 # PowerShell 打包指令範例
-$env:JAVA_HOME = "D:\Work\Sam\Project\APPBuild\jdk17.0.19_10"
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\JDK\jdk17.0.19_10"
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 .\gradlew :app:assembleRelease
 ```
