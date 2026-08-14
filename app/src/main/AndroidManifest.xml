@@ -31,6 +31,18 @@
             android:name=".CrashDisplayActivity"
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.Light" />
+
+        <receiver
+            android:name="com.example.widget.MyMoneyKeepWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.mymoneykeep.widget.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mymoneykeep_info" />
+        </receiver>
     </application>
 
 </manifest>

@@ -1,33 +1,31 @@
 package com.example
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.outlined.Analytics
-import androidx.compose.material.icons.outlined.CloudSync
-import androidx.compose.material.icons.outlined.ListAlt
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
+
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LedgerScreen
 import com.example.ui.screens.ReportsScreen
@@ -36,6 +34,9 @@ import com.example.ui.screens.WelcomeLoginScreen
 import com.example.ui.theme.MyMoneyKeepTheme
 import com.example.ui.viewmodel.BookkeepingViewModel
 import com.example.ui.viewmodel.LoginMode
+import com.example.widget.MyMoneyKeepWidgetProvider
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 
 enum class NavigationTab(
     val title: String,
@@ -43,7 +44,7 @@ enum class NavigationTab(
     val unselectedIcon: ImageVector
 ) {
     HOME("語音記帳", Icons.Filled.Mic, Icons.Outlined.Mic),
-    LEDGER("記帳明細", Icons.Filled.ListAlt, Icons.Outlined.ListAlt),
+    LEDGER("記帳明細", Icons.AutoMirrored.Filled.ListAlt, Icons.AutoMirrored.Outlined.ListAlt),
     REPORTS("消費報表", Icons.Filled.Analytics, Icons.Outlined.Analytics),
     SYNC("帳號設定", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
@@ -55,6 +56,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val incomingAction = intent?.action
 
         setContent {
             val context = LocalContext.current
@@ -88,7 +91,13 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
-                    var selectedTab by remember { mutableStateOf(NavigationTab.HOME) }
+                    var selectedTab by remember {
+                        mutableStateOf(
+                            when (incomingAction) {
+                                else -> NavigationTab.HOME
+                            }
+                        )
+                    }
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
@@ -120,6 +129,7 @@ class MainActivity : ComponentActivity() {
                                 NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
                                 NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
                                 NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
+
                                 NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
                             }
                         }
@@ -127,5 +137,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }

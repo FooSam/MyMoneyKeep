@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material.icons.filled.SmartToy
@@ -210,74 +212,97 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
             }
 
             Divider(color = MaterialTheme.colorScheme.surfaceVariant)
+            
+            var isInputAreaExpanded by remember { mutableStateOf(true) }
+
+            // Expand/Collapse Toggle Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .clickable { isInputAreaExpanded = !isInputAreaExpanded }
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isInputAreaExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Toggle Input Area",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
 
             // Prominent Big Microphone Area
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .padding(vertical = 16.dp),
+                    .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = if (isListening) "正在聆聽中...請說出記帳內容 (例如：晚餐95元)" else "長按或點擊大麥克風快速語音記帳",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Pulsing Big Microphone Button
-                val infiniteTransition = rememberInfiniteTransition()
-                val pulseScale by infiniteTransition.animateFloat(
-                    initialValue = 1f,
-                    targetValue = if (isListening) 1.25f else 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(600, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    )
-                )
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(
-                            brush = if (isListening) {
-                                Brush.radialGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.secondary
-                                    )
-                                )
-                            } else {
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    )
-                                )
-                            }
+                AnimatedVisibility(visible = isInputAreaExpanded) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = if (isListening) "正在聆聽中...請說出記帳內容 (例如：晚餐95元)" else "長按或點擊大麥克風快速語音記帳",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onPress = {
-                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        
+                        Spacer(modifier = Modifier.height(12.dp))
+        
+                        // Pulsing Big Microphone Button
+                        val infiniteTransition = rememberInfiniteTransition()
+                        val pulseScale by infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = if (isListening) 1.25f else 1f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(600, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            )
+                        )
+        
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(88.dp)
+                                .scale(pulseScale)
+                                .clip(CircleShape)
+                                .background(
+                                    brush = if (isListening) {
+                                        Brush.radialGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.secondary
+                                            )
+                                        )
+                                    } else {
+                                        Brush.linearGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            )
+                                        )
+                                    }
+                                )
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        }
+                                    )
                                 }
+                        ) {
+                            Icon(
+                                imageVector = if (isListening) Icons.Default.Mic else Icons.Default.MicNone,
+                                contentDescription = "Microphone",
+                                tint = Color.White,
+                                modifier = Modifier.size(42.dp)
                             )
                         }
-                ) {
-                    Icon(
-                        imageVector = if (isListening) Icons.Default.Mic else Icons.Default.MicNone,
-                        contentDescription = "Microphone",
-                        tint = Color.White,
-                        modifier = Modifier.size(42.dp)
-                    )
+        
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 // Chat AI Input Bar
                 Row(
@@ -362,9 +387,27 @@ fun ChatMessageBubble(message: ChatMessage) {
                 bottomEnd = if (isUser) 4.dp else 16.dp
             ),
             color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.widthIn(max = 280.dp)
+            modifier = Modifier.widthIn(max = if (isUser) 280.dp else 340.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
+                if (!isUser && message.isAiQuestionResponse) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    ) {
+                        // Check if it looks like a local response or cloud response
+                        val isLocal = message.text.contains("💡") || message.text.contains("離線統計模式")
+                        val badgeText = if (isLocal) "⚡ 離線統計模式" else "✨ 雲端智能引擎"
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                
                 Text(
                     text = message.text,
                     style = MaterialTheme.typography.bodyMedium,
@@ -389,11 +432,25 @@ fun ChatMessageBubble(message: ChatMessage) {
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(
-                                    text = "類別 ${parsed.category}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                        modifier = Modifier.padding(end = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = parsed.engineType.badge,
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = "類別 ${parsed.category}",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(

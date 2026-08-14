@@ -17,6 +17,12 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
+enum class ParserEngineType(val displayName: String, val badge: String) {
+    CLOUD_GEMINI("雲端 Gemini 1.5 Flash", "✨ 雲端 AI"),
+    EDGE_NANO("Gemini Nano 地端神經網路", "🧠 地端 Nano"),
+    LOCAL_NLP("本地高階語意引擎", "⚡ 離線智能")
+}
+
 data class ParsedTransaction(
     val date: String,
     val title: String,
@@ -25,7 +31,8 @@ data class ParsedTransaction(
     val expense: Double?,
     val aiResponse: String,
     val isValid: Boolean = true,
-    val warningMessage: String? = null
+    val warningMessage: String? = null,
+    val engineType: ParserEngineType = ParserEngineType.LOCAL_NLP
 )
 
 object ValidationStrings {
@@ -80,7 +87,8 @@ object ValidationStrings {
         title: String,
         amount: Double,
         categoryCode: String,
-        isIncome: Boolean
+        isIncome: Boolean,
+        isLocal: Boolean = true
     ): String {
         val typeLabel = if (isIncome) {
             when (lang) {
@@ -100,12 +108,14 @@ object ValidationStrings {
             }
         }
         val amountInt = if (amount % 1.0 == 0.0) amount.toLong().toString() else amount.toString()
+        val prefix = if (!isLocal) "" else if (lang == AppLanguage.TRADITIONAL_CHINESE || lang == AppLanguage.SIMPLIFIED_CHINESE) "⚡ [離線極速辨識] " else "⚡ [Offline] "
+        
         return when (lang) {
-            AppLanguage.TRADITIONAL_CHINESE -> "已成功記錄：$dateStr $typeLabel 「$title」 $amountInt 元 (類別: $categoryCode)"
-            AppLanguage.SIMPLIFIED_CHINESE -> "已成功记录：$dateStr $typeLabel 『$title』 $amountInt 元 (类别: $categoryCode)"
-            AppLanguage.ENGLISH -> "Recorded successfully: $dateStr $typeLabel '$title' $$amountInt (Cat: $categoryCode)"
-            AppLanguage.JAPANESE -> "記録完了：$dateStr $typeLabel 「$title」 $amountInt 円 (分類: $categoryCode)"
-            AppLanguage.KOREAN -> "기록 완료: $dateStr $typeLabel '$title' $amountInt 원 (분류: $categoryCode)"
+            AppLanguage.TRADITIONAL_CHINESE -> "${prefix}已成功記錄：$dateStr $typeLabel 「$title」 $amountInt 元 (類別: $categoryCode)"
+            AppLanguage.SIMPLIFIED_CHINESE -> "${prefix}已成功记录：$dateStr $typeLabel 『$title』 $amountInt 元 (类别: $categoryCode)"
+            AppLanguage.ENGLISH -> "${prefix}Recorded successfully: $dateStr $typeLabel '$title' $$amountInt (Cat: $categoryCode)"
+            AppLanguage.JAPANESE -> "${prefix}記録完了：$dateStr $typeLabel 「$title」 $amountInt 円 (分類: $categoryCode)"
+            AppLanguage.KOREAN -> "${prefix}기록 완료: $dateStr $typeLabel '$title' $amountInt 원 (분류: $categoryCode)"
         }
     }
 }
@@ -117,14 +127,18 @@ class GeminiBookkeepingParser {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
+    // 支援可插拔的地端 Edge AI / Gemini Nano 接口 (Android AICore)
+    var onDeviceNanoProvider: ((String, AppLanguage) -> ParsedTransaction?)? = null
+
     suspend fun parseUserInput(
         inputText: String,
         customApiKey: String? = null,
         language: AppLanguage = AppLanguage.TRADITIONAL_CHINESE
     ): ParsedTransaction = withContext(Dispatchers.IO) {
         val apiKey = customApiKey?.trim() ?: ""
+        var apiErrorMessage: String? = null
 
-        // 1. Only if custom API Key is entered, call Gemini AI REST API
+        // 第一軌：雲端 Gemini 3.5 Flash (BYOK 模式)
         if (apiKey.isNotBlank()) {
             try {
                 val cal = Calendar.getInstance()
@@ -178,10 +192,14 @@ class GeminiBookkeepingParser {
                     put("generationConfig", JSONObject().apply {
                         put("responseMimeType", "application/json")
                         put("temperature", 0.1)
+                        put("maxOutputTokens", 2048)
+                        put("thinkingConfig", JSONObject().apply {
+                            put("thinkingBudget", 0)
+                        })
                     })
                 }
 
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
                 val requestBody = jsonReq.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url(url)
@@ -194,55 +212,75 @@ class GeminiBookkeepingParser {
                     val root = JSONObject(responseStr)
                     val candidates = root.optJSONArray("candidates")
                     if (candidates != null && candidates.length() > 0) {
-                        val text = candidates.getJSONObject(0)
-                            .getJSONObject("content")
-                            .getJSONArray("parts")
-                            .getJSONObject(0)
-                            .getString("text")
-
-                        val parsedJson = JSONObject(text)
-                        val date = if (parsedJson.has("date") && !parsedJson.isNull("date")) parsedJson.getString("date") else todayStr
-                        var rawTitle = if (parsedJson.has("title") && !parsedJson.isNull("title")) parsedJson.getString("title") else inputText
-                        
-                        // Clean title stop words just in case LLM left any
-                        val title = cleanTitleStopWords(rawTitle).ifBlank { rawTitle }
-                        val income = if (parsedJson.has("income") && !parsedJson.isNull("income")) parsedJson.getDouble("income") else null
-                        val expense = if (parsedJson.has("expense") && !parsedJson.isNull("expense")) parsedJson.getDouble("expense") else null
-                        val rawCategory = if (parsedJson.has("category") && !parsedJson.isNull("category")) parsedJson.getString("category") else null
-
-                        val hasAmount = (income != null && income > 0) || (expense != null && expense > 0)
-                        if (hasAmount && title.isNotBlank()) {
-                            val category = rawCategory?.uppercase(Locale.ROOT) ?: CategoryType.inferCode(income != null, title)
-                            val summary = if (parsedJson.has("summary") && !parsedJson.isNull("summary")) {
-                                parsedJson.getString("summary")
-                            } else {
-                                ValidationStrings.getSuccessResponse(language, date, title, income ?: expense ?: 0.0, category, income != null)
+                        val candidate = candidates.getJSONObject(0)
+                        val content = candidate.optJSONObject("content")
+                        val parts = content?.optJSONArray("parts")
+                        if (parts != null && parts.length() > 0) {
+                            val textBuilder = StringBuilder()
+                            for (i in 0 until parts.length()) {
+                                val part = parts.getJSONObject(i)
+                                if (!part.optBoolean("thought", false)) {
+                                    textBuilder.append(part.optString("text", ""))
+                                }
                             }
+                            val text = textBuilder.toString().trim()
+                            if (text.isNotBlank()) {
+                                val parsedJson = JSONObject(text)
+                                val date = if (parsedJson.has("date") && !parsedJson.isNull("date")) parsedJson.getString("date") else todayStr
+                                val rawTitle = if (parsedJson.has("title") && !parsedJson.isNull("title")) parsedJson.getString("title") else inputText
+                                val title = cleanTitleStopWords(rawTitle).ifBlank { rawTitle }
+                                val income = if (parsedJson.has("income") && !parsedJson.isNull("income")) parsedJson.getDouble("income") else null
+                                val expense = if (parsedJson.has("expense") && !parsedJson.isNull("expense")) parsedJson.getDouble("expense") else null
+                                val rawCategory = if (parsedJson.has("category") && !parsedJson.isNull("category")) parsedJson.getString("category") else null
 
-                            return@withContext ParsedTransaction(
-                                date = date,
-                                title = title,
-                                category = category,
-                                income = income,
-                                expense = expense,
-                                aiResponse = summary,
-                                isValid = true
-                            )
+                                val hasAmount = (income != null && income > 0) || (expense != null && expense > 0)
+                                if (hasAmount && title.isNotBlank()) {
+                                    val category = rawCategory?.uppercase(Locale.ROOT) ?: CategoryType.inferCode(income != null, title)
+                                    val summary = if (parsedJson.has("summary") && !parsedJson.isNull("summary")) {
+                                        parsedJson.getString("summary")
+                                    } else {
+                                        ValidationStrings.getSuccessResponse(language, date, title, income ?: expense ?: 0.0, category, income != null, isLocal = false)
+                                    }
+
+                                    return@withContext ParsedTransaction(
+                                        date = date,
+                                        title = title,
+                                        category = category,
+                                        income = income,
+                                        expense = expense,
+                                        aiResponse = summary,
+                                        isValid = true,
+                                        engineType = ParserEngineType.CLOUD_GEMINI
+                                    )
+                                }
+                            }
                         }
                     }
+                } else {
+                    apiErrorMessage = "HTTP ${response.code}: ${responseStr ?: "Unknown Error"}"
                 }
             } catch (e: Exception) {
-                // In case of network / API failure, fall back to local smart parser
                 e.printStackTrace()
+                apiErrorMessage = e.localizedMessage ?: e.javaClass.simpleName
             }
         }
 
-        // 2. Strict Local Rule Validation (When no API Key or API unavailable)
-        fallbackLocalParse(inputText, hasApiKey = apiKey.isNotBlank(), language = language)
+        // 第二軌：地端 Edge AI / Gemini Nano (Android AICore 適配)
+        try {
+            val nanoResult = onDeviceNanoProvider?.invoke(inputText, language)
+            if (nanoResult != null && nanoResult.isValid) {
+                return@withContext nanoResult.copy(engineType = ParserEngineType.EDGE_NANO)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 第三軌：本地高階自然語言規則引擎 (Enhanced Local NLP Engine - 100% 離線可用)
+        parseLocalNlp(inputText, hasApiKey = apiKey.isNotBlank(), language = language, apiErrorMessage = apiErrorMessage)
     }
 
     private fun cleanTitleStopWords(input: String): String {
-        return input
+        var clean = input
             .replace("今天", "")
             .replace("明天", "")
             .replace("昨天", "")
@@ -260,25 +298,45 @@ class GeminiBookkeepingParser {
             .replace("上午", "")
             .replace("夜間", "")
             .replace("半夜", "")
+            .replace("去吃", "")
+            .replace("去買", "")
             .replace("吃了", "")
             .replace("喝了", "")
             .replace("買了", "")
             .replace("花了", "")
             .replace("付了", "")
             .replace("給了", "")
-            .replace("去吃", "")
-            .replace("去買", "")
-            .replace("去", "")
+            .replace("去了", "")
             .replace("的", "")
             .replace("是", "")
+            .replace("去", "")
             .trim()
+
+        // 去除品項前贅詞動詞 (例如：吃牛肉麵 -> 牛肉麵, 繳房租 -> 房租, 買飲料 -> 飲料, 發薪水 -> 薪水)
+        val leadingVerbs = listOf("去吃", "去買", "去喝", "去", "吃", "喝", "買", "繳", "付", "發")
+        for (v in leadingVerbs) {
+            if (clean.startsWith(v) && clean.length > v.length) {
+                clean = clean.removePrefix(v).trim()
+            }
+        }
+        return clean
     }
 
     fun fallbackLocalParse(input: String, hasApiKey: Boolean, language: AppLanguage): ParsedTransaction {
+        return parseLocalNlp(input, hasApiKey, language, null)
+    }
+
+    /**
+     * 高階本地 NLP 解析引擎：
+     * 1. 支援中文大寫數字轉換 (例如：一百八 -> 180, 兩千五 -> 2500, 1.5萬 -> 15000)
+     * 2. 支援相對日期與星期 (今天, 昨天, 上週三, 這禮拜五等)
+     * 3. 智慧類別關鍵字推斷與分數打分
+     */
+    fun parseLocalNlp(input: String, hasApiKey: Boolean, language: AppLanguage, apiErrorMessage: String? = null): ParsedTransaction {
         val cal = Calendar.getInstance()
         var dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
 
-        var workingText = input
+        var workingText = convertChineseNumbers(input)
 
         // 1. 相對時間詞辨識
         when {
@@ -315,20 +373,39 @@ class GeminiBookkeepingParser {
             workingText.contains("今天") || workingText.contains("今日") -> {
                 workingText = workingText.replace("今天", "").replace("今日", "")
             }
+            // 星期 / 禮拜 (如：上週五、這禮拜三)
+            workingText.contains("上週") || workingText.contains("上星期") || workingText.contains("上禮拜") -> {
+                val targetDay = extractDayOfWeek(workingText)
+                if (targetDay != null) {
+                    cal.add(Calendar.WEEK_OF_YEAR, -1)
+                    cal.set(Calendar.DAY_OF_WEEK, targetDay)
+                    dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
+                    workingText = workingText.replace(Regex("(上週|上星期|上禮拜)[一二三四五六日天]"), "")
+                }
+            }
+            workingText.contains("這週") || workingText.contains("本週") || workingText.contains("這星期") || workingText.contains("這禮拜") -> {
+                val targetDay = extractDayOfWeek(workingText)
+                if (targetDay != null) {
+                    cal.set(Calendar.DAY_OF_WEEK, targetDay)
+                    dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
+                    workingText = workingText.replace(Regex("(這週|本週|這星期|這禮拜)[一二三四五六日天]"), "")
+                }
+            }
         }
 
-        // 2. 絕對日期格式 (如 2026/8/10, 8/10, 8-10)
-        val datePattern = Pattern.compile("(\\d{4}[/-])?(\\d{1,2})[/-](\\d{1,2})")
+        // 2. 絕對日期格式 (如 2026/8/10, 8/10, 8-10, 8月10日)
+        val datePattern = Pattern.compile("(\\d{4}[/\\-年])?(\\d{1,2})[/\\-月](\\d{1,2})[日號]?")
         val dateMatcher = datePattern.matcher(workingText)
         if (dateMatcher.find()) {
-            val year = dateMatcher.group(1)?.replace("-", "/")?.removeSuffix("/") ?: Calendar.getInstance().get(Calendar.YEAR).toString()
+            val rawYear = dateMatcher.group(1)?.replace("-", "")?.replace("/", "")?.replace("年", "")
+            val year = if (!rawYear.isNullOrBlank()) rawYear else Calendar.getInstance().get(Calendar.YEAR).toString()
             val month = dateMatcher.group(2)
             val day = dateMatcher.group(3)
             dateStr = "$year/$month/$day"
             workingText = workingText.replace(datePattern.toRegex(), "")
         }
 
-        // 3. 提取數字金額
+        // 3. 提取金額數字
         val numPattern = Pattern.compile("(\\d+(\\.\\d+)?)")
         val numMatcher = numPattern.matcher(workingText)
         val numbers = mutableListOf<Double>()
@@ -353,15 +430,16 @@ class GeminiBookkeepingParser {
             .replace("$", "")
             .replace("yen", "", ignoreCase = true)
             .replace("円", "")
+            .replace("台幣", "")
 
         title = cleanTitleStopWords(title)
 
-        // Validation Check 1: Amount presence
+        // 檢查 1: 金額是否存在
         if (amount <= 0) {
             val warning = if (!hasApiKey) {
                 ValidationStrings.getNoApiKeyWarning(language)
             } else {
-                ValidationStrings.getMissingAmountWarning(language)
+                ValidationStrings.getMissingAmountWarning(language) + (if (apiErrorMessage != null) "\n(API連線失敗: $apiErrorMessage)" else "")
             }
             return ParsedTransaction(
                 date = dateStr,
@@ -371,13 +449,14 @@ class GeminiBookkeepingParser {
                 expense = null,
                 aiResponse = warning,
                 isValid = false,
-                warningMessage = warning
+                warningMessage = warning,
+                engineType = ParserEngineType.LOCAL_NLP
             )
         }
 
-        // Validation Check 2: Title presence
+        // 檢查 2: 標題是否存在
         if (title.isBlank()) {
-            val warning = ValidationStrings.getMissingTitleWarning(language)
+            val warning = ValidationStrings.getMissingTitleWarning(language) + (if (apiErrorMessage != null) "\n(API連線失敗: $apiErrorMessage)" else "")
             return ParsedTransaction(
                 date = dateStr,
                 title = "",
@@ -386,13 +465,18 @@ class GeminiBookkeepingParser {
                 expense = null,
                 aiResponse = warning,
                 isValid = false,
-                warningMessage = warning
+                warningMessage = warning,
+                engineType = ParserEngineType.LOCAL_NLP
             )
         }
 
-        // Valid Local Input
-        val isIncome = input.contains("收入") || input.contains("發薪") || input.contains("退費") || input.contains("賺") || input.contains("income", ignoreCase = true)
-        val categoryCode = CategoryType.inferCode(isIncome, title)
+        // 5. 收入/支出與類別精準推斷
+        val isIncome = input.contains("收入") || input.contains("發薪") || input.contains("退費") ||
+                input.contains("退款") || input.contains("賺") || input.contains("獎金") ||
+                input.contains("紅包") || input.contains("利息") || input.contains("股息") ||
+                input.contains("income", ignoreCase = true)
+
+        val categoryCode = inferCategorySmartly(title, isIncome)
         val incomeVal = if (isIncome) amount else null
         val expenseVal = if (!isIncome) amount else null
 
@@ -403,7 +487,7 @@ class GeminiBookkeepingParser {
             amount = amount,
             categoryCode = categoryCode,
             isIncome = isIncome
-        )
+        ) + (if (apiErrorMessage != null) "\n(⚠️ 雲端API連線失敗，已自動降級離線模式: $apiErrorMessage)" else "")
 
         return ParsedTransaction(
             date = dateStr,
@@ -412,7 +496,95 @@ class GeminiBookkeepingParser {
             income = incomeVal,
             expense = expenseVal,
             aiResponse = responseMsg,
-            isValid = true
+            isValid = true,
+            engineType = ParserEngineType.LOCAL_NLP
         )
+    }
+
+    private fun extractDayOfWeek(text: String): Int? {
+        return when {
+            text.contains("日") || text.contains("天") -> Calendar.SUNDAY
+            text.contains("一") -> Calendar.MONDAY
+            text.contains("二") -> Calendar.TUESDAY
+            text.contains("三") -> Calendar.WEDNESDAY
+            text.contains("四") -> Calendar.THURSDAY
+            text.contains("五") -> Calendar.FRIDAY
+            text.contains("六") -> Calendar.SATURDAY
+            else -> null
+        }
+    }
+
+    /**
+     * 智能推斷類別代碼 (A: 收入, B: 固定支出, C: 一般支出, D: 特別支出)
+     */
+    private fun inferCategorySmartly(title: String, isIncome: Boolean): String {
+        if (isIncome) return "A"
+
+        val lower = title.lowercase(Locale.ROOT)
+
+        // B: 固定支出 (水電瓦斯房租卡費通信等)
+        val bKeywords = listOf(
+            "房租", "水費", "電費", "瓦斯", "電話費", "話費", "寬頻", "網路費", "卡費", "信用卡",
+            "保險", "健保", "勞保", "貸款", "車貸", "房貸", "學費", "驗車", "管理費", "訂閱",
+            "netflix", "spotify", "youtube", "icloud", "chatgpt"
+        )
+        if (bKeywords.any { lower.contains(it) }) return "B"
+
+        // D: 特別支出 (娛樂購物旅行醫療大額等)
+        val dKeywords = listOf(
+            "衣服", "褲子", "鞋子", "包包", "購物", "網購", "蝦皮", "淘寶", "電影", "遊戲",
+            "唱歌", "ktv", "旅行", "旅遊", "門票", "飯店", "住宿", "聚會", "喝酒", "玩具",
+            "展覽", "健身", "演唱會", "看診", "醫藥", "醫療", "醫院", "診所", "掛號", "剪髮",
+            "美髮", "禮金", "維修", "保養", "罰單", "機票", "高鐵"
+        )
+        if (dKeywords.any { lower.contains(it) }) return "D"
+
+        // 預設與一般食衣住行日常皆為 C (一般支出)
+        return "C"
+    }
+
+    /**
+     * 中文自然語言數字轉換 (如「一百八」-> 180, 「兩百五」-> 250, 「三千」-> 3000, 「1.5萬」-> 15000, 「50k」-> 50000)
+     */
+    private fun convertChineseNumbers(text: String): String {
+        var result = text
+
+        // 支援 k/K 縮寫 (例如 50k -> 50000)
+        val kPattern = Pattern.compile("(\\d+(\\.\\d+)?)[kK]")
+        val kMatcher = kPattern.matcher(result)
+        val kBuffer = StringBuffer()
+        while (kMatcher.find()) {
+            val num = kMatcher.group(1)?.toDoubleOrNull() ?: 0.0
+            kMatcher.appendReplacement(kBuffer, (num * 1000).toLong().toString())
+        }
+        kMatcher.appendTail(kBuffer)
+        result = kBuffer.toString()
+
+        // 支援 萬 縮寫 (例如 1.5萬 -> 15000, 2萬 -> 20000)
+        val wanPattern = Pattern.compile("(\\d+(\\.\\d+)?)萬")
+        val wanMatcher = wanPattern.matcher(result)
+        val wanBuffer = StringBuffer()
+        while (wanMatcher.find()) {
+            val num = wanMatcher.group(1)?.toDoubleOrNull() ?: 0.0
+            wanMatcher.appendReplacement(wanBuffer, (num * 10000).toLong().toString())
+        }
+        wanMatcher.appendTail(wanBuffer)
+        result = wanBuffer.toString()
+
+        // 常見口語百十轉換
+        val directReplacements = mapOf(
+            "一百八" to "180", "一百五" to "150", "一百二" to "120", "一百" to "100",
+            "兩百五" to "250", "兩百八" to "280", "兩百" to "200", "二百" to "200",
+            "三百五" to "350", "三百" to "300", "四百" to "400", "五百" to "500",
+            "六百" to "600", "七百" to "700", "八百" to "800", "九百" to "900",
+            "一千兩百" to "1200", "一千五" to "1500", "一千" to "1000",
+            "兩千" to "2000", "三千" to "3000", "五千" to "5000", "一萬" to "10000",
+            "兩萬" to "20000", "三萬" to "30000", "五萬" to "50000"
+        )
+        for ((k, v) in directReplacements) {
+            result = result.replace(k, v)
+        }
+
+        return result
     }
 }

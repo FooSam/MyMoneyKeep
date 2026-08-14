@@ -5,12 +5,16 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
 import com.example.data.model.CategoryType
+import com.example.data.model.ChatSender
 import com.example.data.model.CustomCategory
+import com.example.data.model.FinancialChatMessage
 import com.example.data.model.TransactionEntity
 import com.example.data.network.GeminiBookkeepingParser
+import com.example.data.network.GeminiChatAgent
 import com.example.data.network.ParsedTransaction
 import com.example.data.repository.TransactionRepository
 import com.example.data.sync.GoogleDriveSyncManager
+import com.example.widget.MyMoneyKeepWidgetProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -19,6 +23,7 @@ data class ChatMessage(
     val sender: String, // "USER" or "AI"
     val text: String,
     val parsedTransaction: ParsedTransaction? = null,
+    val isAiQuestionResponse: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -113,6 +118,67 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
         )
 
     private val parser = GeminiBookkeepingParser()
+    private val chatAgent = GeminiChatAgent()
+
+    private fun isFinancialQuestion(text: String): Boolean {
+        val q = text.trim()
+        val questionKeywords = listOf("多少", "嗎", "建議", "分析", "結餘", "花費", "支出", "收入", "算", "統計", "理財", "怎麼辦", "太高", "太低", "最近")
+        val hasQuestionMark = q.contains("？") || q.contains("?")
+        // If it lacks numbers, it's very likely a question or chat (since transactions need amounts)
+        val hasNumbers = q.any { it.isDigit() } || q.contains("萬") || q.contains("千") || q.contains("百") || q.contains("十")
+
+        if (hasQuestionMark) return true
+        if (!hasNumbers) return true
+
+        for (kw in questionKeywords) {
+            if (q.contains(kw)) return true
+        }
+        return false
+    }
+
+    private suspend fun handleFinancialQuestion(text: String) {
+        try {
+            val apiKey = syncManager.accountState.value.geminiApiKey
+            
+            // To provide context to the agent, we can convert past chatMessages (that are questions/answers) to FinancialChatMessage
+            val history = _chatMessages.value.filter { it.isAiQuestionResponse || it.sender == "USER" }.map { 
+                FinancialChatMessage(
+                    sender = if (it.sender == "USER") ChatSender.USER else ChatSender.ASSISTANT,
+                    text = it.text
+                )
+            }
+
+            val answer = chatAgent.askFinancialAdvisor(
+                userQuestion = text,
+                customApiKey = apiKey,
+                transactions = allTransactions.value,
+                currency = _selectedCurrency.value,
+                language = _selectedLanguage.value,
+                chatHistory = history
+            )
+            val aiMsg = ChatMessage(
+                sender = "AI", 
+                text = answer,
+                isAiQuestionResponse = true
+            )
+            _chatMessages.value = _chatMessages.value + aiMsg
+        } catch (e: Exception) {
+            val errorMsg = ChatMessage(
+                sender = "AI",
+                text = "抱歉，目前處理您的提問時發生錯誤：${e.message}。請稍後再試。",
+                isAiQuestionResponse = true
+            )
+            _chatMessages.value = _chatMessages.value + errorMsg
+        }
+    }
+
+    private fun notifyWidgetUpdate() {
+        try {
+            MyMoneyKeepWidgetProvider.updateAllWidgets(getApplication())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     // Login State Mode
     private val _loginMode = MutableStateFlow<LoginMode>(
@@ -341,36 +407,43 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
 
         viewModelScope.launch {
             try {
-                val customKey = syncManager.accountState.value.geminiApiKey
-                val currentLang = _selectedLanguage.value
-                val result = parser.parseUserInput(text, customApiKey = customKey, language = currentLang)
-
-                if (result.isValid) {
-                    // Add transaction to DB
-                    repository.insertTransaction(
-                        date = result.date,
-                        title = result.title,
-                        category = result.category,
-                        income = result.income,
-                        expense = result.expense
-                    )
-
-                    val aiMsg = ChatMessage(
-                        sender = "AI",
-                        text = result.aiResponse,
-                        parsedTransaction = result
-                    )
-                    _chatMessages.value = _chatMessages.value + aiMsg
+                if (isFinancialQuestion(text)) {
+                    // Route to AI Chat Agent
+                    handleFinancialQuestion(text)
                 } else {
-                    // Invalid input: DO NOT add to DB! Pop up warning alert
-                    val warningText = result.warningMessage ?: result.aiResponse
-                    val aiMsg = ChatMessage(
-                        sender = "AI",
-                        text = warningText,
-                        parsedTransaction = null
-                    )
-                    _chatMessages.value = _chatMessages.value + aiMsg
-                    _warningToastEvent.value = warningText
+                    // Route to Transaction Parser
+                    val customKey = syncManager.accountState.value.geminiApiKey
+                    val currentLang = _selectedLanguage.value
+                    val result = parser.parseUserInput(text, customApiKey = customKey, language = currentLang)
+
+                    if (result.isValid) {
+                        // Add transaction to DB
+                        repository.insertTransaction(
+                            date = result.date,
+                            title = result.title,
+                            category = result.category,
+                            income = result.income,
+                            expense = result.expense
+                        )
+                        notifyWidgetUpdate()
+
+                        val aiMsg = ChatMessage(
+                            sender = "AI",
+                            text = result.aiResponse,
+                            parsedTransaction = result
+                        )
+                        _chatMessages.value = _chatMessages.value + aiMsg
+                    } else {
+                        // Invalid input: DO NOT add to DB! Pop up warning alert
+                        val warningText = result.warningMessage ?: result.aiResponse
+                        val aiMsg = ChatMessage(
+                            sender = "AI",
+                            text = warningText,
+                            parsedTransaction = null
+                        )
+                        _chatMessages.value = _chatMessages.value + aiMsg
+                        _warningToastEvent.value = warningText
+                    }
                 }
             } catch (e: Exception) {
                 val warningText = com.example.data.network.ValidationStrings.getNoApiKeyWarning(_selectedLanguage.value)
@@ -388,18 +461,21 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
     fun addManualTransaction(date: String, title: String, category: String, income: Double?, expense: Double?) {
         viewModelScope.launch {
             repository.insertTransaction(date, title, category, income, expense)
+            notifyWidgetUpdate()
         }
     }
 
     fun updateTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             repository.updateTransaction(transaction)
+            notifyWidgetUpdate()
         }
     }
 
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             repository.deleteTransaction(transaction)
+            notifyWidgetUpdate()
         }
     }
 
@@ -424,6 +500,7 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
             if (!retainLocalData) {
                 repository.clearAll()
             }
+            notifyWidgetUpdate()
             _loginMode.value = LoginMode.GOOGLE_USER
         }
     }
@@ -449,6 +526,7 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
             val list = syncManager.parseCsvContent(csvContent)
             if (list.isNotEmpty()) {
                 repository.replaceAll(list)
+                notifyWidgetUpdate()
             }
         }
     }
@@ -461,6 +539,7 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
         val list = syncManager.restoreFromDrive() ?: return false
         if (list.isNotEmpty()) {
             repository.replaceAll(list)
+            notifyWidgetUpdate()
         }
         return true
     }

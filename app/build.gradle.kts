@@ -122,22 +122,26 @@ android {
 
 }
 
+val releaseOutputDir = file("${rootDir}/../Release")
+val prodName = appProductName
+val prodVer = appVersion
+
 val copyReleaseApk = tasks.register("copyReleaseApk") {
   dependsOn("packageRelease")
+  val buildTree = layout.buildDirectory.asFileTree
   doLast {
-    val releaseDir = file("${rootDir}/../Release")
-    releaseDir.mkdirs()
-    val apkFiles = layout.buildDirectory.asFileTree.matching {
+    releaseOutputDir.mkdirs()
+    val apkFiles = buildTree.matching {
       include("**/*.apk")
       exclude("**/apk_for_local_test/**")
     }.files
 
     println(">> [Copy Release APK] Found candidate APK files: " + apkFiles)
-    val releaseApk = apkFiles.firstOrNull { it.name.contains("release") || it.name.contains(appProductName) }
+    val releaseApk = apkFiles.firstOrNull { it.name.contains("release") || it.name.contains(prodName) }
       ?: apkFiles.firstOrNull()
 
     if (releaseApk != null) {
-      val targetApk = File(releaseDir, "${appProductName}-v${appVersion}-release.apk")
+      val targetApk = File(releaseOutputDir, "${prodName}-v${prodVer}-release.apk")
       releaseApk.copyTo(targetApk, overwrite = true)
       println(">> [Copy Release APK] Successfully copied ${releaseApk.name} -> ${targetApk.absolutePath} (${targetApk.length()} bytes)")
     } else {
