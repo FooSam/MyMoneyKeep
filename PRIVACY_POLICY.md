@@ -1,11 +1,11 @@
-# MyMoneyKeep 隱私權政策 (Privacy Policy)
+# MyMoneyKeep - 智慧記帳助手 隱私權政策 (Privacy Policy)
 
 **生效日期**：2026 年 8 月 14 日  
 **最後更新時間**：2026 年 8 月 14 日  
-**開發者**：Ordinary People Studio  
-**聯絡信箱**：ordinarypeople.studio.tw@gmail.com  
+**開發者**：Sam Foo  
+**聯絡信箱**：foo.sam@gmail.com  
 
-感謝您使用《MyMoneyKeep 雲端記帳》（以下簡稱「本應用程式」）。我們極度重視您的個人隱私與財務資料安全。本應用程式採用**「本地優先 (Local-First)」**與**「無後端伺服器 (Zero-Server)」**架構設計，確保您的所有記帳數據皆由您個人 100% 掌控。
+感謝您使用《MyMoneyKeep - 智慧記帳助手》（以下簡稱「本應用程式」）。我們極度重視您的個人隱私與財務資料安全。本應用程式採用**「本地優先 (Local-First)」**與**「無後端伺服器 (Zero-Server)」**架構設計，確保您的所有記帳數據皆由您個人 100% 掌控。
 
 ---
 
@@ -58,5 +58,5 @@
 
 我們可能會適時更新本隱私權政策。重大變更將於本 GitHub 頁面及 App 更新說明中公告。若您對本隱私權政策有任何疑問或建議，歡迎透過以下方式聯絡我們：
 
-- **電子郵件**：ordinarypeople.studio.tw@gmail.com
+- **電子郵件**：foo.sam@gmail.com
 - **GitHub 專案倉庫**：https://github.com/FooSam/MyMoneyKeep
