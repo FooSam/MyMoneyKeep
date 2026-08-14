@@ -49,7 +49,8 @@ class GeminiChatAgent {
                     1. 必須一律使用繁體中文（台灣 zh-TW）親切回答。
                     2. 若使用者詢問特定品項、日期或月份之花費（例如「8月的午餐總共多少」、「早午晚餐總共花了多少」）：
                        - 必須仔細比對下方真實記帳明細中所有相關項目，精準計算總金額。
-                       - 清楚列出計算出的加總金額，並條列列出具體的消費明細或天數筆數。
+                       - 清楚列出計算出的加總金額。
+                       - ⚠️ 若列出詳細消費明細紀錄，【必須嚴格依據時間日期由舊到新（時間順向/由早至晚，例如 8/1 -> 8/2 -> 8/3...）依序排列】。
                     3. 排版保持簡潔清晰，善用 Emoji、條列式與加粗重點（例如 **NT${'$'}1,234**）。
                     4. 嚴禁輸出任何英文思考過程、草稿或中斷不完整的語句，請直接輸出完整的繁體中文回覆。
                     5. 若使用者詢問省錢或理財建議，請給予 3 點具體、可行且具建設性的步驟。
@@ -182,6 +183,10 @@ class GeminiChatAgent {
             }
         }
 
+        // 嚴格依時間順向（由舊至新、由早到晚，例如 8/1 -> 8/2 -> 8/3...）排序
+        monthTransactions.sortWith(compareBy({ parseDateToComparable(it.date) }, { it.id }))
+        val sortedAllTxs = transactions.sortedWith(compareBy({ parseDateToComparable(it.date) }, { it.id }))
+
         val monthBalance = monthIncome - monthExpense
         val totalBalance = allIncome - allExpense
 
@@ -221,15 +226,15 @@ class GeminiChatAgent {
             - 本月早午晚餐合計：${currency.format(breakfastSum + lunchSum + dinnerSum)}
         """.trimIndent()
 
-        // 提供當月全量明細 (若過多則取最新 100 筆)
+        // 提供當月全量明細 (依時間順向，若過多則取最新 100 筆)
         val monthTxsList = monthTransactions.takeLast(100).joinToString("\n") { tx ->
             val typeStr = if ((tx.income ?: 0.0) > 0) "收入 ${currency.format(tx.income ?: 0.0)}" else "支出 ${currency.format(tx.expense ?: 0.0)}"
             val catName = categoryNames[tx.category] ?: tx.category
             "- ${tx.date} | $catName | ${tx.title} | $typeStr"
         }.ifBlank { "- 本月尚無記帳明細" }
 
-        // 全局最新 30 筆明細
-        val recentTxs = transactions.takeLast(30).joinToString("\n") { tx ->
+        // 全局最近 30 筆明細 (依時間順向)
+        val recentTxs = sortedAllTxs.takeLast(30).joinToString("\n") { tx ->
             val typeStr = if ((tx.income ?: 0.0) > 0) "收入 ${currency.format(tx.income ?: 0.0)}" else "支出 ${currency.format(tx.expense ?: 0.0)}"
             val catName = categoryNames[tx.category] ?: tx.category
             "- ${tx.date} | $catName | ${tx.title} | $typeStr"
@@ -318,5 +323,20 @@ class GeminiChatAgent {
             2. 本月已記錄 ${transactions.size} 筆收支，持續維持記帳是累積財富的最佳起點！
             3. 若有大額非必要開銷，可設定預算上限以防止月末超支。$apiKeyNotice
         """.trimIndent()
+    }
+
+    private fun parseDateToComparable(dateStr: String): Long {
+        return try {
+            val clean = dateStr.trim().replace("-", "/")
+            val parts = clean.split("/")
+            if (parts.size >= 3) {
+                val y = parts[0].toLongOrNull() ?: 0L
+                val m = parts[1].toLongOrNull() ?: 0L
+                val d = parts[2].toLongOrNull() ?: 0L
+                y * 10000L + m * 100L + d
+            } else 0L
+        } catch (e: Exception) {
+            0L
+        }
     }
 }

@@ -83,4 +83,32 @@ class GeminiChatAgentTest {
             assertTrue(response.contains("離線規則模式"))
         }
     }
+
+    @Test
+    fun testBuildFinancialContextChronologicalSorting() {
+        val cal = Calendar.getInstance()
+        val currentYear = cal.get(Calendar.YEAR)
+        val currentMonth = cal.get(Calendar.MONTH) + 1
+
+        // 提供亂序日期 (如 8/13, 8/3, 8/11, 8/5)
+        val txList = listOf(
+            TransactionEntity(id = 1, itemNo = 1, date = "$currentYear/$currentMonth/13", title = "午餐13", category = "C", income = null, expense = 100.0, subtotal = 100.0),
+            TransactionEntity(id = 2, itemNo = 2, date = "$currentYear/$currentMonth/3", title = "午餐3", category = "C", income = null, expense = 95.0, subtotal = 195.0),
+            TransactionEntity(id = 3, itemNo = 3, date = "$currentYear/$currentMonth/11", title = "午餐11", category = "C", income = null, expense = 95.0, subtotal = 290.0),
+            TransactionEntity(id = 4, itemNo = 4, date = "$currentYear/$currentMonth/5", title = "午餐5", category = "C", income = null, expense = 95.0, subtotal = 385.0)
+        )
+
+        val contextStr = chatAgent.buildFinancialContext(txList, AppCurrency.TWD)
+
+        // 驗證生成的 Context 中，明細是否按日期順向排列 (3 -> 5 -> 11 -> 13)
+        val idx3 = contextStr.indexOf("午餐3")
+        val idx5 = contextStr.indexOf("午餐5")
+        val idx11 = contextStr.indexOf("午餐11")
+        val idx13 = contextStr.indexOf("午餐13")
+
+        assertTrue(idx3 != -1 && idx5 != -1 && idx11 != -1 && idx13 != -1)
+        assertTrue("午餐3 應在 午餐5 之前", idx3 < idx5)
+        assertTrue("午餐5 應在 午餐11 之前", idx5 < idx11)
+        assertTrue("午餐11 應在 午餐13 之前", idx11 < idx13)
+    }
 }

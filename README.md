@@ -16,29 +16,39 @@
 
 ## 🌟 核心特色
 
-- 🎙️ **語音智慧記帳**：支援語音輸入，結合自然語言處理與智慧分析，迅速拆解消費項目、金額與分類。
+- 🎙️ **語音智慧記帳**：支援自然語言語音輸入，結合高階斷詞與類別推斷，迅速拆解消費品項、金額與分類。
+- 📱 **Android 桌面質感 Widget 小工具**：
+  - 於手機桌面即時預覽「今日支出」、「今日收入」與「當月結餘」。
+  - 點擊 Widget 即可 1 秒直達語音記帳畫面，大幅降低記帳摩擦力。
+- 💬 **對話式 AI 財務顧問 (Gemini 2.5 Flash)**：
+  - **Context RAG 財務脈絡注入**：直接在首頁向 AI 提問（如「8月午餐總共多少？」、「幫我分析這個月花費」），AI 將結合真實記帳數據進行精確計算、按時間順向列出明細並提供 3 點省錢建議。
+  - **零思考雜訊秒級回應**：針對 Gemini 2.5 Flash 專屬調校，提供流暢的繁體中文（zh-TW）專業分析。
+- 🧠 **本地端 Gemini Nano 離線辨識與三軌智能調度**：
+  - 第一軌：**雲端 Gemini 2.5 Flash** (BYOK 深度財務對話與精確解析)。
+  - 第二軌：**地端 Edge AI / Gemini Nano** (Android AICore 本機神經網路適配)。
+  - 第三軌：**本地高階語意引擎** (支援中文數字「一百八」、「兩千五」、「1.5萬」轉換、相對日期與智慧分類，100% 離線可用)。
 - ☁️ **Google Drive 個人雲端試算表同步**：
   - 採用 Android 原生 OAuth 安全授權，直接連線使用者個人的 Google 雲端硬碟。
   - 自動於雲端建立專屬記帳資料夾並生成原生的 **Google 試算表 (Google Sheets)**，點開直接以試算表格子檢視，並支援一鍵下載還原至手機。
-- 🤖 **Gemini AI 財務分析**：支援使用者自訂 Gemini API Key，深入洞察個人收支結構、提供消費預警與個人化財務優化建議。
 - 🔒 **本地優先與隱私架構 (Local-First)**：
   - 所有收支明細預設儲存於手機本機 Room 資料庫，離線亦可完整使用。
-  - 無第三方後端伺服器中轉，使用者資料完全由個人掌控。
+  - 零第三方後端伺服器中轉，使用者財務資料 100% 完全由個人掌控。
 - 🎨 **現代化 Material 3 視覺體驗**：
   - 支援動態深淺色主題與多種風格切換。
-  - 豐富的圖表統計、明細篩選與即時收支儀表板。
+  - 豐富的圖表統計、明細自訂排序、篩選與即時收支儀表板。
 
 ---
 
 ## 🛠️ 技術棧 (Tech Stack)
 
-- **UI 框架**：Jetpack Compose (Material 3), Navigation Compose
-- **架構設計**：MVVM 架構、Unidirectional Data Flow (UDF)
+- **UI 框架**：Jetpack Compose (Material 3), Navigation Compose, Android AppWidget (Glance-ready)
+- **架構設計**：MVVM 架構、Unidirectional Data Flow (UDF)、Local-First RAG
 - **非同步與狀態**：Kotlin Coroutines, StateFlow, SharedFlow
 - **本地資料持久化**：Room Database (KSP)
 - **雲端與網路**：
   - Google Play Services Auth (原生 Android OAuth 登入)
   - Google Drive REST API v3 / Google Sheets API v4
+  - Google Gemini 2.5 Flash REST API (BYOK)
   - Retrofit 2, Moshi, OkHttp 3
 - **單元與截圖測試**：Robolectric, Roborazzi
 
@@ -111,14 +121,14 @@
 
 ---
 
-## 🤖 Gemini AI 智慧分析設定
+## 🤖 Gemini 2.5 Flash AI 智慧顧問設定
 
-為保障金鑰安全與隱私，AI 智慧分析功能採用**「使用者自帶金鑰 (BYOK)」**設計：
+為保障金鑰安全與個人隱私，AI 智慧分析與對話問答功能採用**「使用者自帶金鑰 (BYOK)」**設計：
 
 1. 前往 [Google AI Studio](https://aistudio.google.com/) 免費申請個人專屬的 Gemini API Key。
 2. 開啟 App，切換至 **【帳號設定】** 頁籤。
-3. 在 **「Gemini API 金鑰設定」** 欄位貼上您的金鑰並儲存。
-4. 儲存後即可在【消費報表】與【語音記帳】中享受智慧財務分析建議！
+3. 在 **「Gemini AI 辨識密鑰 (API Key) 設定」** 欄位貼上您的金鑰並儲存。
+4. 儲存後即可在【語音記帳】直接以語音或文字進行自然語言記帳與對話問答（例如：「8月午餐總共多少」、「幫我分析這個月花費」），享受無思考雜訊、極速秒回的專業財務顧問體驗！未填寫 Key 時亦可使用本機離線規則與 Gemini Nano 基礎辨識。
 
 ---
 
