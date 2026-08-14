@@ -1,4 +1,4 @@
-# MyMoneyKeep 雲端記帳本 (Android)
+# MyMoneyKeep - 智慧記帳助手 (Android)
 
 <div align="center">
 
