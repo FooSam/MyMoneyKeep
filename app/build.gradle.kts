@@ -36,12 +36,12 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk = 35
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.aistudio.mymoneykeep.app"
     minSdk = 24
-    targetSdk = 35
+    targetSdk = 36
     versionCode = parsedVersionCode
     versionName = appVersion
 
@@ -122,27 +122,39 @@ android {
 
 }
 
-val releaseOutputDir = file("${rootDir}/../Release")
-val prodName = appProductName
-val prodVer = appVersion
+abstract class CopyReleaseApkTask : DefaultTask() {
+  @get:org.gradle.api.tasks.InputDirectory
+  abstract val apkDir: org.gradle.api.file.DirectoryProperty
 
-val copyReleaseApk = tasks.register("copyReleaseApk") {
-  dependsOn("packageRelease")
-  val buildTree = layout.buildDirectory.asFileTree
-  doLast {
-    releaseOutputDir.mkdirs()
-    val apkFiles = buildTree.matching {
+  @get:org.gradle.api.tasks.OutputDirectory
+  abstract val outputDir: org.gradle.api.file.DirectoryProperty
+
+  @get:org.gradle.api.tasks.Input
+  abstract val productName: org.gradle.api.provider.Property<String>
+
+  @get:org.gradle.api.tasks.Input
+  abstract val productVersion: org.gradle.api.provider.Property<String>
+
+  @org.gradle.api.tasks.TaskAction
+  fun copyApk() {
+    val outDir = outputDir.get().asFile
+    outDir.mkdirs()
+    val apkFiles = apkDir.get().asFileTree.matching {
       include("**/*.apk")
       exclude("**/apk_for_local_test/**")
     }.files
 
     println(">> [Copy Release APK] Found candidate APK files: " + apkFiles)
+    val prodName = productName.get()
+    val prodVer = productVersion.get()
     val releaseApk = apkFiles.firstOrNull { it.name.contains("release") || it.name.contains(prodName) }
       ?: apkFiles.firstOrNull()
 
     if (releaseApk != null) {
-      val targetApk = File(releaseOutputDir, "${prodName}-v${prodVer}-release.apk")
+      val targetApk = File(outDir, "${prodName}-v${prodVer}-release.apk")
+      val genericApk = File(outDir, "${prodName}.apk")
       releaseApk.copyTo(targetApk, overwrite = true)
+      releaseApk.copyTo(genericApk, overwrite = true)
       println(">> [Copy Release APK] Successfully copied ${releaseApk.name} -> ${targetApk.absolutePath} (${targetApk.length()} bytes)")
     } else {
       println(">> [Copy Release APK] WARNING: No APK file found in build directory!")
@@ -150,8 +162,67 @@ val copyReleaseApk = tasks.register("copyReleaseApk") {
   }
 }
 
+val copyReleaseApk = tasks.register<CopyReleaseApkTask>("copyReleaseApk") {
+  dependsOn("packageRelease")
+  apkDir.set(layout.buildDirectory.dir("outputs/apk/release"))
+  outputDir.set(file("${rootDir}/../Release"))
+  productName.set(appProductName)
+  productVersion.set(appVersion)
+}
+
 tasks.matching { it.name == "assembleRelease" }.configureEach {
   finalizedBy(copyReleaseApk)
+}
+
+abstract class CopyReleaseBundleTask : DefaultTask() {
+  @get:org.gradle.api.tasks.InputDirectory
+  abstract val bundleDir: org.gradle.api.file.DirectoryProperty
+
+  @get:org.gradle.api.tasks.OutputDirectory
+  abstract val outputDir: org.gradle.api.file.DirectoryProperty
+
+  @get:org.gradle.api.tasks.Input
+  abstract val productName: org.gradle.api.provider.Property<String>
+
+  @get:org.gradle.api.tasks.Input
+  abstract val productVersion: org.gradle.api.provider.Property<String>
+
+  @org.gradle.api.tasks.TaskAction
+  fun copyBundle() {
+    val outDir = outputDir.get().asFile
+    outDir.mkdirs()
+    val aabFiles = bundleDir.get().asFileTree.matching {
+      include("**/*.aab")
+    }.files
+
+    println(">> [Copy Release AAB] Found candidate AAB files: " + aabFiles)
+    val prodName = productName.get()
+    val prodVer = productVersion.get()
+    val releaseAab = aabFiles.firstOrNull { it.name.contains("release") || it.name.contains(prodName) }
+      ?: aabFiles.firstOrNull()
+
+    if (releaseAab != null) {
+      val targetAab = File(outDir, "${prodName}-v${prodVer}-release.aab")
+      val genericAab = File(outDir, "${prodName}.aab")
+      releaseAab.copyTo(targetAab, overwrite = true)
+      releaseAab.copyTo(genericAab, overwrite = true)
+      println(">> [Copy Release AAB] Successfully copied ${releaseAab.name} -> ${targetAab.absolutePath} (${targetAab.length()} bytes)")
+    } else {
+      println(">> [Copy Release AAB] WARNING: No AAB file found in build directory!")
+    }
+  }
+}
+
+val copyReleaseBundle = tasks.register<CopyReleaseBundleTask>("copyReleaseBundle") {
+  dependsOn("packageReleaseBundle")
+  bundleDir.set(layout.buildDirectory.dir("outputs/bundle/release"))
+  outputDir.set(file("${rootDir}/../Release"))
+  productName.set(appProductName)
+  productVersion.set(appVersion)
+}
+
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+  finalizedBy(copyReleaseBundle)
 }
 
 
