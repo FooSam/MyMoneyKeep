@@ -14,11 +14,16 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         setupCrashHandler()
+        // 設定基礎遙測資訊
+        com.example.util.CrashReporter.setCustomKey("app_package", packageName)
     }
 
     private fun setupCrashHandler() {
         val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
+            // 回報 Firebase Crashlytics
+            com.example.util.CrashReporter.recordException(exception, tag = "UncaughtCrash")
+
             var crashReport = "Unknown Crash"
             try {
                 // 將 Stack Trace 轉為字串

@@ -76,6 +76,8 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showSyncErrorDialog by remember { mutableStateOf(false) }
     var syncErrorDetail by remember { mutableStateOf("") }
+    var showDiagDialog by remember { mutableStateOf(false) }
+    var diagLogContent by remember { mutableStateOf("") }
 
     var langDropdownExpanded by remember { mutableStateOf(false) }
     var currDropdownExpanded by remember { mutableStateOf(false) }
@@ -94,7 +96,44 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
             }
         } catch (e: com.google.android.gms.common.api.ApiException) {
             viewModel.syncManager.handleSignInResult(null)
-            Toast.makeText(context, "登入失敗: ${e.statusCode}", Toast.LENGTH_SHORT).show()
+            val runtimeSha1 = com.example.util.AppSignatureHelper.getAppSignatureSHA1(context)
+            val statusCode = e.statusCode
+            val statusMsg = e.status.statusMessage ?: "(無訊息)"
+            val causeMsg = e.cause?.message ?: e.cause?.javaClass?.simpleName ?: "(無 cause)"
+            val detailMsg = "【Google 登入診斷報告】\n" +
+                "● 當前運行 APK 簽章 SHA-1:\n$runtimeSha1\n\n" +
+                "● 錯誤代碼: $statusCode (${if (statusCode == 10) "DEVELOPER_ERROR" else "Error"})\n" +
+                "● 錯誤訊息: $statusMsg\n" +
+                "● Cause: $causeMsg\n" +
+                "● 應用程式套件名: ${context.packageName}\n\n" +
+                "【排查三大要點】：\n" +
+                "1. GCP 憑證之 Android Client SHA-1 是否為上述字串？\n" +
+                "2. GCP OAuth 同意畫面「範圍」是否已包含 Drive 與 Sheets？\n" +
+                "3. 登入 Google 帳號是否已加入 GCP「測試使用者」清單？"
+
+            android.util.Log.e("MMK_SignIn", detailMsg, e)
+
+            // 記錄至 Firebase Crashlytics
+            com.example.util.CrashReporter.recordException(
+                throwable = e,
+                tag = "SyncScreen_GoogleSignIn",
+                customKeys = mapOf(
+                    "runtime_sha1" to runtimeSha1,
+                    "status_code" to statusCode.toString(),
+                    "status_message" to statusMsg,
+                    "package_name" to context.packageName
+                )
+            )
+
+            // 寫入本機診斷檔案供查看
+            try {
+                val diagFile = java.io.File(context.filesDir, "sign_in_error.txt")
+                val ts = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                diagFile.writeText("時間: $ts\n$detailMsg\n\n完整 Exception 堆疊:\n${e.stackTraceToString()}")
+            } catch (_: Exception) {}
+
+            diagLogContent = detailMsg
+            showDiagDialog = true
         }
     }
 
@@ -399,6 +438,39 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     text = "版本資訊",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
+                    // 登入診斷按鈕 (開發診斷用)
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val diagFile = java.io.File(context.filesDir, "sign_in_error.txt")
+                                    diagLogContent = if (diagFile.exists()) diagFile.readText() else "目前無診斷記錄。\n請嘗試登入失敗後再點此查看。"
+                                    showDiagDialog = true
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "🔍 登入診斷記錄",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "點此查看",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             }
                         }
@@ -836,6 +908,63 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
         )
     }
 
+    // === 登入診斷 Dialog ===
+    if (showDiagDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiagDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Diag",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("🔍 登入診斷記錄", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = diagLogContent,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(diagLogContent))
+                        Toast.makeText(context, "已複製診斷記錄至剪貼簿！", Toast.LENGTH_SHORT).show()
+                        showDiagDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("複製並關閉")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiagDialog = false }) {
+                    Text("關閉")
+                }
+            }
+        )
+    }
+
+
     if (showCategoryDialog) {
         EditCategoryDialog(
             category = editingCategory,
@@ -1008,6 +1137,62 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
             dismissButton = {
                 OutlinedButton(onClick = { showRestoreConfirmDialog = false }) {
                     Text("取消")
+                }
+            }
+        )
+    }
+
+    if (showDiagDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiagDialog = false },
+            icon = { Icon(Icons.Default.Info, contentDescription = "Diag", tint = MaterialTheme.colorScheme.error) },
+            title = { Text("🔍 Google 登入與憑證診斷") },
+            text = {
+                val currentRuntimeSha1 = com.example.util.AppSignatureHelper.getAppSignatureSHA1(context)
+                val fullDisplayContent = if (diagLogContent.isNotBlank()) {
+                    diagLogContent
+                } else {
+                    "【當前環境憑證資訊】\n" +
+                    "● 當前運行 APK 簽章 SHA-1:\n$currentRuntimeSha1\n\n" +
+                    "● 應用程式套件名: ${context.packageName}\n\n" +
+                    "目前尚無最近的登入失敗紀錄。"
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = fullDisplayContent,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val currentRuntimeSha1 = com.example.util.AppSignatureHelper.getAppSignatureSHA1(context)
+                        val textToCopy = if (diagLogContent.isNotBlank()) {
+                            diagLogContent
+                        } else {
+                            "【當前環境憑證資訊】\n" +
+                            "● 當前運行 APK 簽章 SHA-1:\n$currentRuntimeSha1\n\n" +
+                            "● 應用程式套件名: ${context.packageName}"
+                        }
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("MMK_SignIn_Diag", textToCopy)
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "已複製診斷資訊至剪貼簿！", Toast.LENGTH_SHORT).show()
+                        showDiagDialog = false
+                    }
+                ) {
+                    Text("複製診斷報告")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiagDialog = false }) {
+                    Text("關閉")
                 }
             }
         )

@@ -31,7 +31,8 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
-  // Firebase Google Services plugin 已移除（無 google-services.json，不使用 Firebase）
+  alias(libs.plugins.google.services)
+  alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -230,8 +231,9 @@ tasks.matching { it.name == "bundleRelease" }.configureEach {
 // This makes it easy to add them back in the future if needed.
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
-  // Firebase BOM 已移除（不使用 Firebase，避免啟動閃退）
-  // implementation(platform(libs.firebase.bom))
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.crashlytics)
+  implementation(libs.firebase.analytics)
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   // implementation(libs.androidx.camera.camera2)

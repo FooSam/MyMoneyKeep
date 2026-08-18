@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "921755694036",
+    "project_id": "gen-lang-client-0240563336",
+    "storage_bucket": "gen-lang-client-0240563336.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921755694036:android:2cf8776b1a4da73f7e9c41",
+        "android_client_info": {
+          "package_name": "com.aistudio.mymoneykeep.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "921755694036-jkhc9trdvtorb13smtvf6i2eetbon61s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUlYOE9M60AOF9ETLnmLiSxoh6N8GDsWM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "921755694036-jkhc9trdvtorb13smtvf6i2eetbon61s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

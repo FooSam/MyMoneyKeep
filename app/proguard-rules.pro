@@ -52,11 +52,9 @@
 -keepclassmembers class kotlinx.coroutines.** { *; }
 -dontwarn kotlinx.coroutines.**
 
-# ── Firebase (已移除 Firebase 依賴，此規則保留備用) ────────────────────────────
-# -keep class com.google.firebase.** { *; }
-# -keep class com.google.firebase.appcheck.** { *; }
-# -dontwarn com.google.firebase.**
-# -dontwarn com.google.firebase.appcheck.**
+# ── Firebase & Crashlytics ──────────────────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
 
 # ── App 自有類別 (com.example 套件) & ViewModel ──────────────────────────────
 -keep class com.example.** { *; }
