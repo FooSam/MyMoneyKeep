@@ -18,10 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 
 @Composable
 fun WelcomeLoginScreen(
@@ -68,7 +70,7 @@ fun WelcomeLoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "MyMoneyKeep AI 記帳本",
+                text = stringResource(R.string.welcome_title),
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -77,7 +79,7 @@ fun WelcomeLoginScreen(
             )
 
             Text(
-                text = "智能語音解析 ‧ Google Drive 雲端試算表自動同步",
+                text = stringResource(R.string.welcome_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -116,24 +118,18 @@ fun WelcomeLoginScreen(
                         }
                         Column {
                             Text(
-                                text = "Google 帳號登入 (推薦)",
+                                text = stringResource(R.string.welcome_btn_google),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "試算表雲端即時備份與跨裝置同步",
+                                text = stringResource(R.string.sync_google_account_title),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Divider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FeatureCheckRow("自動在 Google Drive 建立年度與月份試算表")
-                        FeatureCheckRow("支援電腦端 Excel / Sheets 隨時檢視完整明細")
-                        FeatureCheckRow("換手機無縫還原資料，絕不遺失紀錄")
-                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
 
                     Button(
                         onClick = onGoogleLogin,
@@ -142,7 +138,7 @@ fun WelcomeLoginScreen(
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("使用 Google 帳號登入", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.welcome_btn_google), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -180,24 +176,18 @@ fun WelcomeLoginScreen(
                         }
                         Column {
                             Text(
-                                text = "不使用帳號登入 (單機離線模式)",
+                                text = stringResource(R.string.welcome_btn_guest),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "資料僅儲存於手機本機 SQLite 資料庫",
+                                text = stringResource(R.string.sync_account_not_logged_in),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FeatureCheckRow("極致個人隱私，完全離線使用不傳輸雲端")
-                        FeatureCheckRow("未來隨時可在 [帳號設定] 中連結 Google 帳號")
-                        FeatureCheckRow("提供防呆警示：登入時可選擇保留本機資料")
-                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
 
                     OutlinedButton(
                         onClick = onGuestMode,
@@ -206,7 +196,7 @@ fun WelcomeLoginScreen(
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("以離線單機模式開始", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.welcome_btn_guest), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -226,31 +216,14 @@ fun WelcomeLoginScreen(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "所有敏感資料與 API Key 皆採用加密區塊安全防護",
+                    text = stringResource(R.string.welcome_privacy_note),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-}
-
-@Composable
-private fun FeatureCheckRow(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = Icons.Default.CloudDone,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }

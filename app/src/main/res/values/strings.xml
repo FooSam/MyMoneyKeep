@@ -1,3 +1,119 @@
 <resources>
     <string name="app_name">MyMoneyKeep</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Voice</string>
+    <string name="nav_ledger">Ledger</string>
+    <string name="nav_reports">Reports</string>
+    <string name="nav_sync">Settings</string>
+
+    <!-- Home Screen -->
+    <string name="home_month_balance">Monthly Balance</string>
+    <string name="home_input_placeholder">Voice or text input, e.g., Lunch 120...</string>
+    <string name="home_income">Income</string>
+    <string name="home_expense">Expense</string>
+    <string name="home_ai_listening">Listening...</string>
+    <string name="home_ai_analyzing">Analyzing with AI...</string>
+    <string name="home_btn_save">Save Record</string>
+    <string name="home_btn_retry">Retry</string>
+    <string name="home_save_success">Saved successfully!</string>
+    <string name="home_edit_dialog_title">Edit Transaction</string>
+    <string name="home_engine_cloud_ai">✨ Cloud AI</string>
+    <string name="home_engine_edge_nano">🧠 On-Device Nano</string>
+    <string name="home_engine_local_nlp">⚡ Offline NLP</string>
+    <string name="home_recent_records">Recent Records</string>
+    <string name="home_voice_tooltip">Tap to start voice input</string>
+    <string name="home_voice_permission_required">Microphone permission is required for voice input</string>
+    <string name="home_ai_chat_title">AI Financial Assistant</string>
+    <string name="home_btn_send">Send</string>
+
+    <!-- Ledger Screen -->
+    <string name="ledger_title">Ledger Records</string>
+    <string name="ledger_filter_all">All</string>
+    <string name="ledger_filter_income">Income</string>
+    <string name="ledger_filter_expense">Expense</string>
+    <string name="ledger_sort_date">Date</string>
+    <string name="ledger_sort_amount">Amount</string>
+    <string name="ledger_sort_title">Item</string>
+    <string name="ledger_sort_category">Category</string>
+    <string name="ledger_empty_records">No records found</string>
+    <string name="ledger_delete_confirm_title">Confirm Delete</string>
+    <string name="ledger_delete_confirm_msg">Are you sure you want to delete this record?</string>
+    <string name="ledger_btn_delete">Delete</string>
+    <string name="ledger_btn_cancel">Cancel</string>
+    <string name="ledger_btn_edit">Edit</string>
+    <string name="ledger_item_count">Total: %1$d records</string>
+
+    <!-- Reports Screen -->
+    <string name="reports_title">Expense Reports</string>
+    <string name="reports_monthly">Monthly</string>
+    <string name="reports_yearly">Yearly</string>
+    <string name="reports_total_expense">Total Expense</string>
+    <string name="reports_total_income">Total Income</string>
+    <string name="reports_net_savings">Net Savings</string>
+    <string name="reports_category_breakdown">Category Breakdown</string>
+    <string name="reports_no_data">No data for this period</string>
+
+    <!-- Settings / Sync Screen -->
+    <string name="sync_title">Account &amp; Settings</string>
+    <string name="sync_google_account_title">Google Account &amp; Cloud Backup</string>
+    <string name="sync_account_logged_in">Signed in</string>
+    <string name="sync_account_not_logged_in">Not signed in (Guest Mode)</string>
+    <string name="sync_btn_login">Sign in with Google</string>
+    <string name="sync_btn_logout">Sign Out</string>
+    <string name="sync_btn_sync_to_cloud">Sync to Cloud</string>
+    <string name="sync_btn_restore_from_cloud">Restore from Cloud</string>
+    <string name="sync_btn_paste_csv">Paste CSV</string>
+    <string name="sync_preferences_title">Preferences</string>
+    <string name="sync_pref_theme">App Theme</string>
+    <string name="sync_pref_language">Language</string>
+    <string name="sync_pref_currency">Currency</string>
+    <string name="sync_pref_show_home_balance">Show Balance on Home Screen</string>
+    <string name="sync_pref_show_home_balance_desc">Display "Monthly Balance" badge on home screen</string>
+    <string name="sync_categories_title">Category Management</string>
+    <string name="sync_categories_count">%1$d/%2$d categories created</string>
+    <string name="sync_btn_add_category">Add Category</string>
+    <string name="sync_dialog_add_cat_title">Add Custom Category</string>
+    <string name="sync_dialog_cat_name">Category Name</string>
+    <string name="sync_dialog_cat_type">Type</string>
+    <string name="sync_dialog_cat_color">Color</string>
+    <string name="sync_gemini_api_title">Gemini AI API Key</string>
+    <string name="sync_gemini_api_desc">Enter your Gemini API Key to enable AI natural language parsing and smart categorization.</string>
+    <string name="sync_gemini_api_placeholder">Enter Gemini API Key</string>
+    <string name="sync_btn_save_key">Save Key</string>
+    <string name="sync_version_info_title">Version Information</string>
+    <string name="sync_diag_title">🔍 Sign-In Diagnostic Log</string>
+    <string name="sync_diag_cleared">Diagnostic log cleared</string>
+    <string name="sync_easter_unlocked">🛠️ Developer sign-in diagnostics unlocked!</string>
+    <string name="sync_confirm_restore_title">Restore from Cloud</string>
+    <string name="sync_confirm_restore_msg">Restoring from cloud will replace local data. Do you want to continue?</string>
+    <string name="sync_paste_csv_title">Paste CSV Data</string>
+    <string name="sync_paste_csv_placeholder">Paste CSV content here...</string>
+    <string name="sync_paste_csv_confirm">Import Data</string>
+
+    <!-- Welcome & Login Screen -->
+    <string name="welcome_title">MyMoneyKeep</string>
+    <string name="welcome_subtitle">Smart Voice • Cloud Sheets Sync • Fully Offline</string>
+    <string name="welcome_btn_google">Sign in with Google</string>
+    <string name="welcome_btn_guest">Guest Mode (Device Only)</string>
+    <string name="welcome_privacy_note">We respect your privacy. Data is stored only on your device and private Google Drive.</string>
+
+    <!-- Add/Edit Transaction Dialog -->
+    <string name="dialog_add_title">Add Transaction</string>
+    <string name="dialog_edit_title">Edit Transaction</string>
+    <string name="dialog_type_expense">Expense</string>
+    <string name="dialog_type_income">Income</string>
+    <string name="dialog_amount">Amount</string>
+    <string name="dialog_title_label">Item Title</string>
+    <string name="dialog_category_label">Category</string>
+    <string name="dialog_date_label">Date</string>
+    <string name="dialog_note_label">Note (Optional)</string>
+    <string name="dialog_btn_confirm">Confirm</string>
+    <string name="dialog_btn_cancel">Cancel</string>
+
+    <!-- Diagnostics Dialog -->
+    <string name="diag_dialog_title">⚠️ Google Sign-In Diagnostic</string>
+    <string name="diag_btn_copy">Copy Report</string>
+    <string name="diag_btn_close">Close</string>
+    <string name="diag_copy_success">Diagnostic report copied to clipboard!</string>
 </resources>

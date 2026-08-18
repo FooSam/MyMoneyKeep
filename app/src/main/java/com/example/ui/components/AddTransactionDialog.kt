@@ -10,10 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.model.CustomCategory
 import com.example.data.model.TransactionEntity
 import java.text.SimpleDateFormat
@@ -50,7 +51,7 @@ fun AddTransactionDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = if (transaction == null) "新增記帳項目" else "編輯記帳項目")
+            Text(text = stringResource(if (transaction == null) R.string.dialog_add_title else R.string.dialog_edit_title))
         },
         text = {
             Column(
@@ -71,7 +72,7 @@ fun AddTransactionDialog(
                                 selectedCategoryCode = defaultExp.code
                             }
                         },
-                        label = { Text("支出") },
+                        label = { Text(stringResource(R.string.dialog_type_expense)) },
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
@@ -83,7 +84,7 @@ fun AddTransactionDialog(
                                 selectedCategoryCode = defaultInc.code
                             }
                         },
-                        label = { Text("收入") },
+                        label = { Text(stringResource(R.string.dialog_type_income)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -91,7 +92,7 @@ fun AddTransactionDialog(
                 OutlinedTextField(
                     value = date,
                     onValueChange = { date = it },
-                    label = { Text("日期 (YYYY/M/D)") },
+                    label = { Text(stringResource(R.string.dialog_date_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -99,7 +100,7 @@ fun AddTransactionDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("項目標題 (例：早餐、洗車)") },
+                    label = { Text(stringResource(R.string.dialog_title_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -107,7 +108,7 @@ fun AddTransactionDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("金額") },
+                    label = { Text(stringResource(R.string.dialog_amount)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -127,7 +128,7 @@ fun AddTransactionDialog(
                         value = if (currentCatObj.code.isNotBlank()) "${currentCatObj.code} - ${currentCatObj.name}" else currentCatObj.name,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("記帳類別") },
+                        label = { Text(stringResource(R.string.dialog_category_label)) },
                         leadingIcon = {
                             Box(
                                 modifier = Modifier
@@ -138,7 +139,7 @@ fun AddTransactionDialog(
                         },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryDropdownExpanded) },
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                             .fillMaxWidth()
                     )
 
@@ -164,7 +165,7 @@ fun AddTransactionDialog(
                                     ) {
                                         Text("${cat.code} - ${cat.name}")
                                         Text(
-                                            text = if (cat.isIncome) "[收入]" else "[支出]",
+                                            text = if (cat.isIncome) "[${stringResource(R.string.home_income)}]" else "[${stringResource(R.string.home_expense)}]",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -191,12 +192,12 @@ fun AddTransactionDialog(
                 },
                 enabled = title.isNotBlank() && amountText.isNotBlank()
             ) {
-                Text("儲存")
+                Text(stringResource(R.string.dialog_btn_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.dialog_btn_cancel))
             }
         }
     )

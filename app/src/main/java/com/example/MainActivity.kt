@@ -43,15 +43,20 @@ import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import com.example.util.LocaleHelper
+
 enum class NavigationTab(
-    val title: String,
+    val titleResId: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    HOME("語音記帳", Icons.Filled.Mic, Icons.Outlined.Mic),
-    LEDGER("記帳明細", Icons.AutoMirrored.Filled.ListAlt, Icons.AutoMirrored.Outlined.ListAlt),
-    REPORTS("消費報表", Icons.Filled.Analytics, Icons.Outlined.Analytics),
-    SYNC("帳號設定", Icons.Filled.Settings, Icons.Outlined.Settings)
+    HOME(R.string.nav_home, Icons.Filled.Mic, Icons.Outlined.Mic),
+    LEDGER(R.string.nav_ledger, Icons.AutoMirrored.Filled.ListAlt, Icons.AutoMirrored.Outlined.ListAlt),
+    REPORTS(R.string.nav_reports, Icons.Filled.Analytics, Icons.Outlined.Analytics),
+    SYNC(R.string.nav_sync, Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
 class MainActivity : ComponentActivity() {
@@ -65,9 +70,17 @@ class MainActivity : ComponentActivity() {
         val incomingAction = intent?.action
 
         setContent {
-            val context = LocalContext.current
+            val baseContext = LocalContext.current
+            val currentLanguage by viewModel.selectedLanguage.collectAsState()
             val styleTheme by viewModel.selectedStyleTheme.collectAsState()
             val loginMode by viewModel.loginMode.collectAsState()
+
+            val localizedContext = remember(currentLanguage) {
+                LocaleHelper.applyLocale(baseContext, currentLanguage.code)
+            }
+            val localizedConfiguration = remember(currentLanguage, localizedContext) {
+                localizedContext.resources.configuration
+            }
 
             var showSignInDiagDialog by remember { mutableStateOf(false) }
             var signInDiagContent by remember { mutableStateOf("") }
@@ -84,7 +97,7 @@ class MainActivity : ComponentActivity() {
                     }
                 } catch (e: ApiException) {
                     viewModel.syncManager.handleSignInResult(null)
-                    val runtimeSha1 = com.example.util.AppSignatureHelper.getAppSignatureSHA1(context)
+                    val runtimeSha1 = com.example.util.AppSignatureHelper.getAppSignatureSHA1(baseContext)
                     val statusCode = e.statusCode
                     val statusMsg = e.status.statusMessage ?: "(無訊息)"
                     val causeMsg = e.cause?.message ?: e.cause?.javaClass?.simpleName ?: "(無 cause)"
@@ -93,7 +106,7 @@ class MainActivity : ComponentActivity() {
                         "● 錯誤代碼: $statusCode (${if (statusCode == 10) "DEVELOPER_ERROR" else "Error"})\n" +
                         "● 錯誤訊息: $statusMsg\n" +
                         "● Cause: $causeMsg\n" +
-                        "● 應用程式套件名: ${context.packageName}\n\n" +
+                        "● 應用程式套件名: ${baseContext.packageName}\n\n" +
                         "【排查三大要點】：\n" +
                         "1. GCP 憑證之 Android Client SHA-1 是否為上述字串？\n" +
                         "2. GCP OAuth 同意畫面「範圍」是否已包含 Drive 與 Sheets？\n" +
@@ -109,7 +122,7 @@ class MainActivity : ComponentActivity() {
                             "runtime_sha1" to runtimeSha1,
                             "status_code" to statusCode.toString(),
                             "status_message" to statusMsg,
-                            "package_name" to context.packageName
+                            "package_name" to baseContext.packageName
                         )
                     )
 
@@ -125,94 +138,100 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            MyMoneyKeepTheme(styleTheme = styleTheme) {
-                if (showSignInDiagDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showSignInDiagDialog = false },
-                        title = { Text("⚠️ Google 登入失敗診斷") },
-                        text = {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                Text(
-                                    text = signInDiagContent,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                    val clip = android.content.ClipData.newPlainText("MMK_SignIn_Diag", signInDiagContent)
-                                    clipboard.setPrimaryClip(clip)
-                                    Toast.makeText(context, "已複製診斷報告至剪貼簿！", Toast.LENGTH_SHORT).show()
-                                    showSignInDiagDialog = false
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides localizedConfiguration
+            ) {
+                MyMoneyKeepTheme(styleTheme = styleTheme) {
+                    if (showSignInDiagDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showSignInDiagDialog = false },
+                            title = { Text(stringResource(R.string.diag_dialog_title)) },
+                            text = {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = signInDiagContent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
-                            ) {
-                                Text("複製診斷報告")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showSignInDiagDialog = false }) {
-                                Text("關閉")
-                            }
-                        }
-                    )
-                }
-                if (loginMode == LoginMode.UNSET) {
-                    WelcomeLoginScreen(
-                        onGoogleLogin = {
-                            welcomeSignInLauncher.launch(viewModel.syncManager.getSignInIntent())
-                        },
-                        onGuestMode = {
-                            viewModel.selectGuestMode()
-                        }
-                    )
-                } else {
-                    var selectedTab by remember {
-                        mutableStateOf(
-                            when (incomingAction) {
-                                else -> NavigationTab.HOME
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val clipboard = localizedContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                        val clip = android.content.ClipData.newPlainText("MMK_SignIn_Diag", signInDiagContent)
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(localizedContext, localizedContext.getString(R.string.diag_copy_success), Toast.LENGTH_SHORT).show()
+                                        showSignInDiagDialog = false
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.diag_btn_copy))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showSignInDiagDialog = false }) {
+                                    Text(stringResource(R.string.diag_btn_close))
+                                }
                             }
                         )
                     }
+                    if (loginMode == LoginMode.UNSET) {
+                        WelcomeLoginScreen(
+                            onGoogleLogin = {
+                                welcomeSignInLauncher.launch(viewModel.syncManager.getSignInIntent())
+                            },
+                            onGuestMode = {
+                                viewModel.selectGuestMode()
+                            }
+                        )
+                    } else {
+                        var selectedTab by remember {
+                            mutableStateOf(
+                                when (incomingAction) {
+                                    else -> NavigationTab.HOME
+                                }
+                            )
+                        }
 
-                    Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        bottomBar = {
-                            NavigationBar {
-                                NavigationTab.entries.forEach { tab ->
-                                    val isSelected = selectedTab == tab
-                                    NavigationBarItem(
-                                        selected = isSelected,
-                                        onClick = { selectedTab = tab },
-                                        label = { Text(tab.title) },
-                                        icon = {
-                                            Icon(
-                                                imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                                                contentDescription = tab.title
-                                            )
-                                        }
-                                    )
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            bottomBar = {
+                                NavigationBar {
+                                    NavigationTab.entries.forEach { tab ->
+                                        val isSelected = selectedTab == tab
+                                        val tabTitle = stringResource(tab.titleResId)
+                                        NavigationBarItem(
+                                            selected = isSelected,
+                                            onClick = { selectedTab = tab },
+                                            label = { Text(tabTitle) },
+                                            icon = {
+                                                Icon(
+                                                    imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                                                    contentDescription = tabTitle
+                                                )
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        }
-                    ) { innerPadding ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                        ) {
-                            when (selectedTab) {
-                                NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
-                                NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
-                                NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
-
-                                NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
+                        ) { innerPadding ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(innerPadding)
+                            ) {
+                                when (selectedTab) {
+                                    NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
+                                    NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
+                                    NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
+                                    NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
+                                }
                             }
                         }
                     }

@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
@@ -42,7 +43,15 @@ enum class AppLanguage(val code: String, val displayName: String) {
     SIMPLIFIED_CHINESE("zh-CN", "简体中文"),
     ENGLISH("en", "English"),
     JAPANESE("ja", "日本語"),
-    KOREAN("ko", "한국어")
+    KOREAN("ko", "한국어");
+
+    companion object {
+        fun fromCode(code: String?): AppLanguage {
+            if (code == null) return TRADITIONAL_CHINESE
+            return entries.firstOrNull { it.code.equals(code, ignoreCase = true) }
+                ?: if (code.startsWith("zh")) TRADITIONAL_CHINESE else ENGLISH
+        }
+    }
 }
 
 enum class AppCurrency(
@@ -186,7 +195,51 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
     )
     val loginMode: StateFlow<LoginMode> = _loginMode
 
+    private val prefs = application.getSharedPreferences("mymoneykeep_user_prefs", android.content.Context.MODE_PRIVATE)
+
     // UI States
+    private val _showHomeBalance = MutableStateFlow(prefs.getBoolean("show_home_balance", true))
+    val showHomeBalance: StateFlow<Boolean> = _showHomeBalance
+
+    fun setShowHomeBalance(show: Boolean) {
+        _showHomeBalance.value = show
+        prefs.edit().putBoolean("show_home_balance", show).apply()
+    }
+
+    private data class ParsedDate(val year: Int, val month: Int, val day: Int)
+
+    private fun parseDateString(dateStr: String): ParsedDate? {
+        val clean = dateStr.trim().replace("-", "/")
+        val parts = clean.split("/")
+        if (parts.size >= 3) {
+            val y = parts[0].toIntOrNull() ?: return null
+            val m = parts[1].toIntOrNull() ?: return null
+            val d = parts[2].toIntOrNull() ?: return null
+            return ParsedDate(y, m, d)
+        }
+        return null
+    }
+
+    val currentMonthBalance: StateFlow<Double> = allTransactions.map { transactions ->
+        val cal = java.util.Calendar.getInstance()
+        val curYear = cal.get(java.util.Calendar.YEAR)
+        val curMonth = cal.get(java.util.Calendar.MONTH) + 1
+        var monthIncome = 0.0
+        var monthExpense = 0.0
+        transactions.forEach { tx ->
+            val pd = parseDateString(tx.date)
+            if (pd != null && pd.year == curYear && pd.month == curMonth) {
+                monthIncome += (tx.income ?: 0.0)
+                monthExpense += (tx.expense ?: 0.0)
+            }
+        }
+        monthIncome - monthExpense
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = 0.0
+    )
+
     private val _selectedLanguage = MutableStateFlow(AppLanguage.TRADITIONAL_CHINESE)
     val selectedLanguage: StateFlow<AppLanguage> = _selectedLanguage
 
@@ -210,20 +263,6 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
 
     private val _sortDirection = MutableStateFlow(SortDirection.DESC)
     val sortDirection: StateFlow<SortDirection> = _sortDirection
-
-    private data class ParsedDate(val year: Int, val month: Int, val day: Int)
-
-    private fun parseDateString(dateStr: String): ParsedDate? {
-        val clean = dateStr.trim().replace("-", "/")
-        val parts = clean.split("/")
-        if (parts.size >= 3) {
-            val y = parts[0].toIntOrNull() ?: return null
-            val m = parts[1].toIntOrNull() ?: return null
-            val d = parts[2].toIntOrNull() ?: return null
-            return ParsedDate(y, m, d)
-        }
-        return null
-    }
 
     private val _selectedTimeRange = MutableStateFlow(ReportTimeRange.MONTH)
     val selectedTimeRange: StateFlow<ReportTimeRange> = _selectedTimeRange
@@ -310,6 +349,10 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
     val lastAddedTransaction: StateFlow<TransactionEntity?> = _lastAddedTransaction
 
     init {
+        val prefs = getApplication<Application>().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+        val savedLangCode = prefs.getString("selected_language_code", "zh-TW")
+        _selectedLanguage.value = AppLanguage.fromCode(savedLangCode)
+
         viewModelScope.launch {
             repository.checkAndSeedInitialData()
         }
@@ -317,6 +360,8 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
 
     fun setLanguage(language: AppLanguage) {
         _selectedLanguage.value = language
+        val prefs = getApplication<Application>().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+        prefs.edit().putString("selected_language_code", language.code).apply()
     }
 
     fun setCurrency(currency: AppCurrency) {

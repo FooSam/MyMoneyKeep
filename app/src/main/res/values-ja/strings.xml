@@ -1,0 +1,119 @@
+<resources>
+    <string name="app_name">家計簿アシスタント</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">音声入力</string>
+    <string name="nav_ledger">明細</string>
+    <string name="nav_reports">レポート</string>
+    <string name="nav_sync">設定</string>
+
+    <!-- Home Screen -->
+    <string name="home_month_balance">今月の収支</string>
+    <string name="home_input_placeholder">音声またはテキスト入力（例：昼食 120）...</string>
+    <string name="home_income">収入</string>
+    <string name="home_expense">支出</string>
+    <string name="home_ai_listening">音声を認識中...</string>
+    <string name="home_ai_analyzing">AI解析中...</string>
+    <string name="home_btn_save">記録を保存</string>
+    <string name="home_btn_retry">やり直す</string>
+    <string name="home_save_success">保存しました！</string>
+    <string name="home_edit_dialog_title">取引を編集</string>
+    <string name="home_engine_cloud_ai">✨ クラウドAI</string>
+    <string name="home_engine_edge_nano">🧠 オンデバイスNano</string>
+    <string name="home_engine_local_nlp">⚡ オフライン自然言語</string>
+    <string name="home_recent_records">最近の記録</string>
+    <string name="home_voice_tooltip">タップして音声入力を開始</string>
+    <string name="home_voice_permission_required">音声入力にはマイクの権限が必要です</string>
+    <string name="home_ai_chat_title">AI家計アドバイザー</string>
+    <string name="home_btn_send">送信</string>
+
+    <!-- Ledger Screen -->
+    <string name="ledger_title">家計簿明細</string>
+    <string name="ledger_filter_all">すべて</string>
+    <string name="ledger_filter_income">収入</string>
+    <string name="ledger_filter_expense">支出</string>
+    <string name="ledger_sort_date">日付</string>
+    <string name="ledger_sort_amount">金額</string>
+    <string name="ledger_sort_title">項目</string>
+    <string name="ledger_sort_category">カテゴリ</string>
+    <string name="ledger_empty_records">記録がありません</string>
+    <string name="ledger_delete_confirm_title">削除の確認</string>
+    <string name="ledger_delete_confirm_msg">この記録を削除してもよろしいですか？</string>
+    <string name="ledger_btn_delete">削除</string>
+    <string name="ledger_btn_cancel">キャンセル</string>
+    <string name="ledger_btn_edit">編集</string>
+    <string name="ledger_item_count">合計 %1$d 件</string>
+
+    <!-- Reports Screen -->
+    <string name="reports_title">消費レポート</string>
+    <string name="reports_monthly">月次</string>
+    <string name="reports_yearly">年次</string>
+    <string name="reports_total_expense">総支出</string>
+    <string name="reports_total_income">総収入</string>
+    <string name="reports_net_savings">純貯蓄</string>
+    <string name="reports_category_breakdown">カテゴリ別支出</string>
+    <string name="reports_no_data">この期間のデータはありません</string>
+
+    <!-- Settings / Sync Screen -->
+    <string name="sync_title">アカウントと環境設定</string>
+    <string name="sync_google_account_title">Googleアカウントとクラウド同期</string>
+    <string name="sync_account_logged_in">ログイン中</string>
+    <string name="sync_account_not_logged_in">未ログイン（ゲストモード）</string>
+    <string name="sync_btn_login">Googleでログイン</string>
+    <string name="sync_btn_logout">ログアウト</string>
+    <string name="sync_btn_sync_to_cloud">クラウドに同期</string>
+    <string name="sync_btn_restore_from_cloud">クラウドから復元</string>
+    <string name="sync_btn_paste_csv">CSV貼り付け</string>
+    <string name="sync_preferences_title">環境設定</string>
+    <string name="sync_pref_theme">アプリテーマ</string>
+    <string name="sync_pref_language">言語 (Language)</string>
+    <string name="sync_pref_currency">通貨単位</string>
+    <string name="sync_pref_show_home_balance">ホーム画面に残高を表示</string>
+    <string name="sync_pref_show_home_balance_desc">ホーム画面の右上に「今月の収支」バッジを表示</string>
+    <string name="sync_categories_title">カテゴリ管理</string>
+    <string name="sync_categories_count">%1$d/%2$d 件作成済み</string>
+    <string name="sync_btn_add_category">カテゴリを追加</string>
+    <string name="sync_dialog_add_cat_title">新規カテゴリの追加</string>
+    <string name="sync_dialog_cat_name">カテゴリ名</string>
+    <string name="sync_dialog_cat_type">タイプ</string>
+    <string name="sync_dialog_cat_color">カラー</string>
+    <string name="sync_gemini_api_title">Gemini AI APIキー設定</string>
+    <string name="sync_gemini_api_desc">AI自然言語解析と自動分類を使用するには、Gemini APIキーを入力してください。未入力の場合は手動規則チェックが適用されます。</string>
+    <string name="sync_gemini_api_placeholder">Gemini APIキーを入力</string>
+    <string name="sync_btn_save_key">キーを保存</string>
+    <string name="sync_version_info_title">バージョン情報</string>
+    <string name="sync_diag_title">🔍 ログイン診断ログ（開発者用）</string>
+    <string name="sync_diag_cleared">診断ログを消去しました</string>
+    <string name="sync_easter_unlocked">🛠️ 開発者用診断ログのロックを解除しました！</string>
+    <string name="sync_confirm_restore_title">クラウドから復元</string>
+    <string name="sync_confirm_restore_msg">クラウドから復元すると、ローカルのデータが上書きされます。続行しますか？</string>
+    <string name="sync_paste_csv_title">CSVデータのインポート</string>
+    <string name="sync_paste_csv_placeholder">ここにCSV内容を貼り付けてください...</string>
+    <string name="sync_paste_csv_confirm">インポートを確認</string>
+
+    <!-- Welcome & Login Screen -->
+    <string name="welcome_title">MyMoneyKeep クラウド家計簿</string>
+    <string name="welcome_subtitle">スマート音声入力 • Googleシート連携 • 完全オフライン対応</string>
+    <string name="welcome_btn_google">Googleアカウントでログイン</string>
+    <string name="welcome_btn_guest">ゲストモード（端末のみ保存）</string>
+    <string name="welcome_privacy_note">お客様のプライバシーを尊重します。データは端末および個人のGoogleドライブにのみ保存されます。</string>
+
+    <!-- Add/Edit Transaction Dialog -->
+    <string name="dialog_add_title">取引の手動追加</string>
+    <string name="dialog_edit_title">取引の編集</string>
+    <string name="dialog_type_expense">支出</string>
+    <string name="dialog_type_income">収入</string>
+    <string name="dialog_amount">金額</string>
+    <string name="dialog_title_label">項目名</string>
+    <string name="dialog_category_label">カテゴリ</string>
+    <string name="dialog_date_label">日付</string>
+    <string name="dialog_note_label">メモ（任意）</string>
+    <string name="dialog_btn_confirm">保存</string>
+    <string name="dialog_btn_cancel">キャンセル</string>
+
+    <!-- Diagnostics Dialog -->
+    <string name="diag_dialog_title">⚠️ Googleログイン診断</string>
+    <string name="diag_btn_copy">診断ログをコピー</string>
+    <string name="diag_btn_close">閉じる</string>
+    <string name="diag_copy_success">診断ログをクリップボードにコピーしました！</string>
+</resources>

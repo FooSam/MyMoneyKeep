@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,14 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.components.PieChart
-import com.example.ui.theme.ColorCategoryA
-import com.example.ui.theme.ColorCategoryB
-import com.example.ui.theme.ColorCategoryC
-import com.example.ui.theme.ColorCategoryD
 import com.example.ui.theme.ColorExpense
 import com.example.ui.theme.ColorIncome
 import com.example.ui.viewmodel.AppCurrency
@@ -48,7 +45,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "消費報表與圓餅圖分析",
+                        text = stringResource(R.string.reports_title),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
@@ -63,18 +60,25 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)
         ) {
-            // Time Range Tabs: 週 / 月 / 季 / 年
+            // Time Range Tabs
             item {
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ReportTimeRange.entries.forEachIndexed { index, range ->
+                        val rangeLabel = when (range) {
+                            ReportTimeRange.ALL -> stringResource(R.string.ledger_filter_all)
+                            ReportTimeRange.WEEK -> "Week"
+                            ReportTimeRange.MONTH -> stringResource(R.string.reports_monthly)
+                            ReportTimeRange.QUARTER -> "Quarter"
+                            ReportTimeRange.YEAR -> stringResource(R.string.reports_yearly)
+                        }
                         SegmentedButton(
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = ReportTimeRange.entries.size),
                             onClick = { viewModel.setReportTimeRange(range) },
                             selected = selectedRange == range
                         ) {
-                            Text(text = range.label, style = MaterialTheme.typography.labelSmall)
+                            Text(text = rangeLabel, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -92,7 +96,6 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                 ) {
                     val currentIndex = availablePeriodOptions.indexOf(periodLabel)
 
-                    // Prev Period Button (older date / next option)
                     IconButton(
                         onClick = {
                             if (currentIndex < availablePeriodOptions.size - 1 && currentIndex != -1) {
@@ -106,7 +109,6 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                         Icon(imageVector = Icons.Default.ChevronLeft, contentDescription = "Previous Period")
                     }
 
-                    // Center Selector Dropdown
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -123,7 +125,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "統計區間：$periodLabel",
+                                text = periodLabel,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -150,7 +152,6 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                         }
                     }
 
-                    // Next Period Button (newer date / previous option)
                     IconButton(
                         onClick = {
                             if (currentIndex > 0) {
@@ -173,21 +174,21 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SummaryCard(
-                        title = "總收入",
+                        title = stringResource(R.string.reports_total_income),
                         amount = reportData.totalIncome,
                         color = ColorIncome,
                         currency = selectedCurrency,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        title = "總支出",
+                        title = stringResource(R.string.reports_total_expense),
                         amount = reportData.totalExpense,
                         color = ColorExpense,
                         currency = selectedCurrency,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        title = "淨結餘",
+                        title = stringResource(R.string.reports_net_savings),
                         amount = reportData.netBalance,
                         color = if (reportData.netBalance >= 0) MaterialTheme.colorScheme.primary else ColorExpense,
                         currency = selectedCurrency,
@@ -208,7 +209,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "${selectedRange.label} - 支出比例圓餅圖",
+                            text = stringResource(R.string.reports_category_breakdown),
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.align(Alignment.Start)
                         )
@@ -226,7 +227,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
             // Category Breakdown Title
             item {
                 Text(
-                    text = "類別消費統計分析 (A/B/C/D)",
+                    text = stringResource(R.string.reports_category_breakdown),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                 )
             }
@@ -302,12 +303,12 @@ fun CategoryBreakdownCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "類別 ${summary.code}：${summary.label}",
+                        text = "${summary.code}：${summary.label}",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "(${summary.itemCount}筆)",
+                        text = "(${summary.itemCount})",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -338,7 +339,7 @@ fun CategoryBreakdownCard(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "${String.format("%.1f", summary.percentage)}%",
+                    text = "${String.format(java.util.Locale.US, "%.1f", summary.percentage)}%",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

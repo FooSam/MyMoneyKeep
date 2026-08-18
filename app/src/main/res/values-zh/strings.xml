@@ -1,0 +1,119 @@
+<resources>
+    <string name="app_name">記帳助手</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">語音記帳</string>
+    <string name="nav_ledger">記帳明細</string>
+    <string name="nav_reports">消費報表</string>
+    <string name="nav_sync">帳號設定</string>
+
+    <!-- Home Screen -->
+    <string name="home_month_balance">本月結餘</string>
+    <string name="home_input_placeholder">語音或文字輸入記帳，例如：午餐 120...</string>
+    <string name="home_income">收入</string>
+    <string name="home_expense">支出</string>
+    <string name="home_ai_listening">正在聆聽中...</string>
+    <string name="home_ai_analyzing">正在進行 AI 解析...</string>
+    <string name="home_btn_save">儲存記帳</string>
+    <string name="home_btn_retry">重新輸入</string>
+    <string name="home_save_success">記帳成功！</string>
+    <string name="home_edit_dialog_title">編輯交易項目</string>
+    <string name="home_engine_cloud_ai">✨ 雲端 AI</string>
+    <string name="home_engine_edge_nano">🧠 地端 Nano</string>
+    <string name="home_engine_local_nlp">⚡ 離線智能</string>
+    <string name="home_recent_records">最近記帳</string>
+    <string name="home_voice_tooltip">點擊開始語音輸入</string>
+    <string name="home_voice_permission_required">需要麥克風權限以進行語音記帳</string>
+    <string name="home_ai_chat_title">AI 財務顧問</string>
+    <string name="home_btn_send">發送</string>
+
+    <!-- Ledger Screen -->
+    <string name="ledger_title">記帳明細</string>
+    <string name="ledger_filter_all">全部</string>
+    <string name="ledger_filter_income">收入</string>
+    <string name="ledger_filter_expense">支出</string>
+    <string name="ledger_sort_date">日期</string>
+    <string name="ledger_sort_amount">金額</string>
+    <string name="ledger_sort_title">項目</string>
+    <string name="ledger_sort_category">類別</string>
+    <string name="ledger_empty_records">尚無任何記帳資料</string>
+    <string name="ledger_delete_confirm_title">刪除確認</string>
+    <string name="ledger_delete_confirm_msg">確定要刪除這筆記帳紀錄嗎？</string>
+    <string name="ledger_btn_delete">刪除</string>
+    <string name="ledger_btn_cancel">取消</string>
+    <string name="ledger_btn_edit">編輯</string>
+    <string name="ledger_item_count">共 %1$d 筆記錄</string>
+
+    <!-- Reports Screen -->
+    <string name="reports_title">消費報表</string>
+    <string name="reports_monthly">月度報表</string>
+    <string name="reports_yearly">年度報表</string>
+    <string name="reports_total_expense">總支出</string>
+    <string name="reports_total_income">總收入</string>
+    <string name="reports_net_savings">淨結餘</string>
+    <string name="reports_category_breakdown">類別支出佔比</string>
+    <string name="reports_no_data">此期間尚無消費統計資料</string>
+
+    <!-- Settings / Sync Screen -->
+    <string name="sync_title">帳號與一般設定</string>
+    <string name="sync_google_account_title">Google 帳號與雲端備份</string>
+    <string name="sync_account_logged_in">已登入帳號</string>
+    <string name="sync_account_not_logged_in">尚未登入 Google 帳號 (訪客模式)</string>
+    <string name="sync_btn_login">使用 Google 帳號登入</string>
+    <string name="sync_btn_logout">登出 Google 帳號</string>
+    <string name="sync_btn_sync_to_cloud">同步至雲端</string>
+    <string name="sync_btn_restore_from_cloud">從雲端還原</string>
+    <string name="sync_btn_paste_csv">貼上 CSV</string>
+    <string name="sync_preferences_title">偏好設定</string>
+    <string name="sync_pref_theme">介面主題 (Theme)</string>
+    <string name="sync_pref_language">應用程式語系 (Language)</string>
+    <string name="sync_pref_currency">貨幣單位 (Currency)</string>
+    <string name="sync_pref_show_home_balance">主頁金額統計顯示</string>
+    <string name="sync_pref_show_home_balance_desc">在首頁右上角顯示「本月結餘」徽章</string>
+    <string name="sync_categories_title">自訂收支類別管理</string>
+    <string name="sync_categories_count">已建立 %1$d/%2$d 種類別</string>
+    <string name="sync_btn_add_category">新增類別</string>
+    <string name="sync_dialog_add_cat_title">新增自訂類別</string>
+    <string name="sync_dialog_cat_name">類別名稱</string>
+    <string name="sync_dialog_cat_type">類別類型</string>
+    <string name="sync_dialog_cat_color">標籤色彩</string>
+    <string name="sync_gemini_api_title">Gemini AI API Key 設定</string>
+    <string name="sync_gemini_api_desc">如需使用 AI 自然語言解析與智慧分類功能，請在此填入您的專屬 Gemini API Key。未填寫時系統將停用 AI 自動辨識，改用手動規則檢查與防呆驗證。</string>
+    <string name="sync_gemini_api_placeholder">請輸入 Gemini API Key</string>
+    <string name="sync_btn_save_key">儲存 Key</string>
+    <string name="sync_version_info_title">版本資訊</string>
+    <string name="sync_diag_title">🔍 登入診斷記錄 (開發人員)</string>
+    <string name="sync_diag_cleared">已清除診斷記錄</string>
+    <string name="sync_easter_unlocked">🛠️ 已解鎖開發人員登入診斷記錄！</string>
+    <string name="sync_confirm_restore_title">從雲端試算表還原</string>
+    <string name="sync_confirm_restore_msg">從雲端還原將會以雲端試算表的資料覆寫本機資料，確定要繼續嗎？</string>
+    <string name="sync_paste_csv_title">貼上 CSV 數據匯入</string>
+    <string name="sync_paste_csv_placeholder">在此貼上 CSV 格式內容...</string>
+    <string name="sync_paste_csv_confirm">確認匯入</string>
+
+    <!-- Welcome & Login Screen -->
+    <string name="welcome_title">MyMoneyKeep 雲端記帳本</string>
+    <string name="welcome_subtitle">智慧語音記帳 • 雲端試算表無縫同步 • 離線完全可用</string>
+    <string name="welcome_btn_google">使用 Google 帳號登入</string>
+    <string name="welcome_btn_guest">訪客模式 (僅保存在此裝置)</string>
+    <string name="welcome_privacy_note">本 APP 尊重並保護您的隱私，所有資料僅儲存於您的本機與私有 Google 雲端空間。</string>
+
+    <!-- Add/Edit Transaction Dialog -->
+    <string name="dialog_add_title">手動新增記帳</string>
+    <string name="dialog_edit_title">編輯記帳記錄</string>
+    <string name="dialog_type_expense">支出</string>
+    <string name="dialog_type_income">收入</string>
+    <string name="dialog_amount">金額</string>
+    <string name="dialog_title_label">項目名稱</string>
+    <string name="dialog_category_label">記帳類別</string>
+    <string name="dialog_date_label">交易日期</string>
+    <string name="dialog_note_label">備註 (可選)</string>
+    <string name="dialog_btn_confirm">確定儲存</string>
+    <string name="dialog_btn_cancel">取消</string>
+
+    <!-- Diagnostics Dialog -->
+    <string name="diag_dialog_title">⚠️ Google 登入失敗診斷</string>
+    <string name="diag_btn_copy">複製診斷報告</string>
+    <string name="diag_btn_close">關閉</string>
+    <string name="diag_copy_success">已複製診斷報告至剪貼簿！</string>
+</resources>

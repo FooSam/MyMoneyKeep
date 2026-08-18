@@ -37,19 +37,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.CategoryType
-import com.example.ui.theme.ColorCategoryA
-import com.example.ui.theme.ColorCategoryB
-import com.example.ui.theme.ColorCategoryC
-import com.example.ui.theme.ColorCategoryD
+import com.example.R
 import com.example.ui.theme.ColorExpense
 import com.example.ui.theme.ColorIncome
 import com.example.ui.viewmodel.BookkeepingViewModel
 import com.example.ui.viewmodel.ChatMessage
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,9 +56,11 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
     val isListening by viewModel.isListening.collectAsState()
     val isProcessingAi by viewModel.isProcessingAi.collectAsState()
     val googleState by viewModel.googleAccountState.collectAsState()
-    val allTransactions by viewModel.allTransactions.collectAsState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
 
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val showHomeBalance by viewModel.showHomeBalance.collectAsState()
+    val currentMonthBalance by viewModel.currentMonthBalance.collectAsState()
     val warningToastEvent by viewModel.warningToastEvent.collectAsState()
     val listState = rememberLazyListState()
 
@@ -80,7 +78,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            startListening(context, speechRecognizer, viewModel)
+            startListening(context, speechRecognizer, viewModel, selectedLanguage.code)
         }
     }
 
@@ -134,7 +132,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                 title = {
                     Column {
                         Text(
-                            text = "MyMoneyKeep 語音記帳",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -146,7 +144,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "試算表: ${googleState.sheetTitle} (已同步)",
+                                text = googleState.sheetTitle,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -154,19 +152,20 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                     }
                 },
                 actions = {
-                    // Total balance badge
-                    val latestSubtotal = allTransactions.lastOrNull()?.subtotal ?: 0.0
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
-                        Text(
-                            text = "結餘: ${selectedCurrency.format(latestSubtotal)}",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    // Total balance badge (本月結餘)
+                    if (showHomeBalance) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.padding(end = 12.dp)
+                        ) {
+                            Text(
+                                text = "${stringResource(R.string.home_month_balance)}: ${selectedCurrency.format(currentMonthBalance)}",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
             )
@@ -202,7 +201,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Gemini AI 正在解析語音與分類試算表...",
+                                text = stringResource(R.string.home_ai_analyzing),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -211,7 +210,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                 }
             }
 
-            Divider(color = MaterialTheme.colorScheme.surfaceVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
             
             var isInputAreaExpanded by remember { mutableStateOf(true) }
 
@@ -237,13 +236,13 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AnimatedVisibility(visible = isInputAreaExpanded) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = if (isListening) "正在聆聽中...請說出記帳內容 (例如：晚餐95元)" else "長按或點擊大麥克風快速語音記帳",
+                            text = if (isListening) stringResource(R.string.home_ai_listening) else stringResource(R.string.home_voice_tooltip),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -314,7 +313,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                     OutlinedTextField(
                         value = chatInput,
                         onValueChange = { viewModel.updateChatInput(it) },
-                        placeholder = { Text("例：12/5 發薪日 收入47540") },
+                        placeholder = { Text(stringResource(R.string.home_input_placeholder)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         shape = RoundedCornerShape(24.dp),
@@ -325,7 +324,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = "Send"
+                                    contentDescription = stringResource(R.string.home_btn_send)
                                 )
                             }
                         }
@@ -339,12 +338,13 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
 private fun startListening(
     context: android.content.Context,
     recognizer: SpeechRecognizer?,
-    viewModel: BookkeepingViewModel
+    viewModel: BookkeepingViewModel,
+    langCode: String
 ) {
     if (recognizer == null) return
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "zh-TW")
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, langCode)
     }
     try {
         viewModel.setListening(true)
@@ -396,9 +396,8 @@ fun ChatMessageBubble(message: ChatMessage) {
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                         modifier = Modifier.padding(bottom = 6.dp)
                     ) {
-                        // Check if it looks like a local response or cloud response
-                        val isLocal = message.text.contains("💡") || message.text.contains("離線統計模式")
-                        val badgeText = if (isLocal) "⚡ 離線統計模式" else "✨ 雲端智能引擎"
+                        val isLocal = message.text.contains("💡") || message.text.contains("離線") || message.text.contains("Offline")
+                        val badgeText = if (isLocal) stringResource(R.string.home_engine_local_nlp) else stringResource(R.string.home_engine_cloud_ai)
                         Text(
                             text = badgeText,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
@@ -446,7 +445,7 @@ fun ChatMessageBubble(message: ChatMessage) {
                                         )
                                     }
                                     Text(
-                                        text = "類別 ${parsed.category}",
+                                        text = "${stringResource(R.string.dialog_category_label)} ${parsed.category}",
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )
