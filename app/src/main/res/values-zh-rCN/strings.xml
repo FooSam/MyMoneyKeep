@@ -4,6 +4,7 @@
     <!-- Navigation -->
     <string name="nav_home">语音记账</string>
     <string name="nav_ledger">记账明细</string>
+    <string name="nav_exchange">汇率计算器</string>
     <string name="nav_reports">消费报表</string>
     <string name="nav_sync">账号设置</string>
 
@@ -19,7 +20,7 @@
     <string name="home_save_success">记账成功！</string>
     <string name="home_edit_dialog_title">编辑交易项目</string>
     <string name="home_engine_cloud_ai">✨ 云端 AI</string>
-    <string name="home_engine_edge_nano">🧠 端侧 Nano</string>
+    <string name="home_engine_edge_nano">🧠 终端 Nano</string>
     <string name="home_engine_local_nlp">⚡ 离线智能</string>
     <string name="home_recent_records">最近记账</string>
     <string name="home_voice_tooltip">点击开始语音输入</string>
@@ -35,7 +36,7 @@
     <string name="ledger_sort_date">日期</string>
     <string name="ledger_sort_amount">金额</string>
     <string name="ledger_sort_title">项目</string>
-    <string name="ledger_sort_category">类别</string>
+    <string name="ledger_sort_category">分类</string>
     <string name="ledger_empty_records">暂无任何记账数据</string>
     <string name="ledger_delete_confirm_title">删除确认</string>
     <string name="ledger_delete_confirm_msg">确定要删除这条记账记录吗？</string>
@@ -46,37 +47,32 @@
 
     <!-- Reports Screen -->
     <string name="reports_title">消费报表</string>
+    <string name="reports_weekly">周报表</string>
     <string name="reports_monthly">月度报表</string>
+    <string name="reports_quarterly">季度报表</string>
     <string name="reports_yearly">年度报表</string>
     <string name="reports_total_expense">总支出</string>
     <string name="reports_total_income">总收入</string>
     <string name="reports_net_savings">净结余</string>
-    <string name="reports_category_breakdown">类别支出占比</string>
+    <string name="reports_category_breakdown">分类支出占比</string>
     <string name="reports_no_data">此期间暂无消费统计数据</string>
 
     <!-- Settings / Sync Screen -->
-    <string name="sync_title">账号与通用设置</string>
-    <string name="sync_google_account_title">Google 账号与云端备份</string>
-    <string name="sync_account_logged_in">已登录账号</string>
-    <string name="sync_account_not_logged_in">尚未登录 Google 账号 (访客模式)</string>
-    <string name="sync_btn_login">使用 Google 账号登录</string>
-    <string name="sync_btn_logout">退出 Google 账号</string>
-    <string name="sync_btn_sync_to_cloud">同步至云端</string>
-    <string name="sync_btn_restore_from_cloud">从云端恢复</string>
-    <string name="sync_btn_paste_csv">粘贴 CSV</string>
+    <string name="sync_title">账号与常规设置</string>
+    <string name="sync_general_settings">常规设置</string>
     <string name="sync_preferences_title">偏好设置</string>
     <string name="sync_pref_theme">界面主题 (Theme)</string>
     <string name="sync_pref_language">应用程序语言 (Language)</string>
     <string name="sync_pref_currency">货币单位 (Currency)</string>
     <string name="sync_pref_show_home_balance">主页金额统计显示</string>
-    <string name="sync_pref_show_home_balance_desc">在首页右上角显示“本月结余”徽章</string>
-    <string name="sync_categories_title">自定义收支类别管理</string>
-    <string name="sync_categories_count">已创建 %1$d/%2$d 种类类别</string>
-    <string name="sync_btn_add_category">新增类别</string>
-    <string name="sync_dialog_add_cat_title">新增自定义类别</string>
-    <string name="sync_dialog_cat_name">类别名称</string>
-    <string name="sync_dialog_cat_type">类别类型</string>
-    <string name="sync_dialog_cat_color">标签色彩</string>
+    <string name="sync_pref_show_home_balance_desc">在首页右上角显示「本月结余」徽章</string>
+    <string name="sync_categories_title">自定义收支分类管理</string>
+    <string name="sync_categories_count">已建立 %1$d/%2$d 种分类</string>
+    <string name="sync_btn_add_category">添加分类</string>
+    <string name="sync_dialog_add_cat_title">添加自定义分类</string>
+    <string name="sync_dialog_cat_name">分类名称</string>
+    <string name="sync_dialog_cat_type">分类类型</string>
+    <string name="sync_dialog_cat_color">标签颜色</string>
     <string name="sync_gemini_api_title">Gemini AI API Key 设置</string>
     <string name="sync_gemini_api_desc">如需使用 AI 自然语言解析与智能分类功能，请在此填入您的专属 Gemini API Key。未填写时系统将停用 AI 自动识别，改用手动规则检查与防呆验证。</string>
     <string name="sync_gemini_api_placeholder">请输入 Gemini API Key</string>
@@ -85,27 +81,55 @@
     <string name="sync_diag_title">🔍 登录诊断记录 (开发人员)</string>
     <string name="sync_diag_cleared">已清除诊断记录</string>
     <string name="sync_easter_unlocked">🛠️ 已解锁开发人员登录诊断记录！</string>
-    <string name="sync_confirm_restore_title">从云端表格恢复</string>
-    <string name="sync_confirm_restore_msg">从云端恢复将会以云端表格的数据覆盖本地数据，确定要继续吗？</string>
+
+    <string name="sync_google_account_title">Google 账号与云端备份</string>
+    <string name="sync_account_logged_in">已登录账号</string>
+    <string name="sync_account_not_logged_in">尚未登录 Google 账号 (访客模式)</string>
+    <string name="sync_btn_login">使用 Google 账号登录</string>
+    <string name="sync_btn_logout">退出 Google 账号</string>
+    <string name="sync_btn_sync_to_cloud">同步至云端</string>
+    <string name="sync_btn_restore_from_cloud">从云端还原</string>
+    <string name="sync_drive_folder_label">云端硬盘文件夹</string>
+    <string name="sync_google_sheet_label">Google 表格</string>
+
+    <string name="sync_btn_architecture_guide">架构说明</string>
+    <string name="sync_architecture_title">云端表格存储架构说明</string>
+    <string name="sync_architecture_folder_title">1. 专属私有云端文件夹</string>
+    <string name="sync_architecture_folder_desc">• 自动于您的 Google 云端硬盘创建『MyMoneyKeep_云端记账本』文件夹，不与其他文件混杂，隐私安全无虞。</string>
+    <string name="sync_architecture_yearly_title">2. 年度自动分表管理</string>
+    <string name="sync_architecture_yearly_desc">• 系统自动依年度创建独立的 Google 表格（例如：『2026_MyMoneyKeep_记账本』）。即使记账多年，单一文件依然轻巧流畅，查看与搜索零卡顿。</string>
+    <string name="sync_architecture_style_title">3. 原生排版美化套版与自定义分类色彩</string>
+    <string name="sync_architecture_style_desc">• 同步时自动套用整齐排版（第一行标题横幅、列位置中、收入/支出/小计靠右对齐）。\n• 表格中的『标题』文字会即时依据您在 APP 内为各分类设置的专属色彩显示，一目了然。</string>
+    <string name="sync_architecture_restore_title">4. 无损还原与全自动连线</string>
+    <string name="sync_architecture_restore_desc">• 换机或重新安装时，点击『从表格还原』即可将云端数据完整下载回手机，且完全不会破坏云端既有的精美排版与样式。\n• 免手动填写复杂 ID，只要登录 Google 账号即可全自动完成所有串接。</string>
+    <string name="sync_architecture_btn_close">了解并关闭</string>
+
+    <string name="sync_csv_backup_title">表格全表CSV备份(复制/导入)</string>
+    <string name="sync_csv_backup_desc">支持将当前所有记账记录一键复制为标准 CSV 格式，或将外部 CSV 粘贴导入</string>
+    <string name="sync_btn_copy_csv">复制CSV表格</string>
+    <string name="sync_btn_paste_csv">粘贴 CSV</string>
     <string name="sync_paste_csv_title">粘贴 CSV 数据导入</string>
     <string name="sync_paste_csv_placeholder">在此粘贴 CSV 格式内容...</string>
     <string name="sync_paste_csv_confirm">确认导入</string>
 
+    <string name="sync_confirm_restore_title">从云端表格还原</string>
+    <string name="sync_confirm_restore_msg">从云端还原将会以云端表格的数据覆盖本地数据，确定要继续吗？</string>
+
     <!-- Welcome & Login Screen -->
-    <string name="welcome_title">MyMoneyKeep 云端记账本</string>
+    <string name="welcome_title">MyMoneyKeep 智能记账本</string>
     <string name="welcome_subtitle">智能语音记账 • 云端表格无缝同步 • 离线完全可用</string>
     <string name="welcome_btn_google">使用 Google 账号登录</string>
     <string name="welcome_btn_guest">访客模式 (仅保存在此设备)</string>
-    <string name="welcome_privacy_note">本 APP 尊重并保护您的隐私，所有数据仅存储在您的本地与私有 Google 云端空间。</string>
+    <string name="welcome_privacy_note">本 APP 尊重并保护您的隐私，所有数据仅存储于您的本地与私有 Google 云端空间。</string>
 
     <!-- Add/Edit Transaction Dialog -->
-    <string name="dialog_add_title">手动新增记账</string>
+    <string name="dialog_add_title">手动添加记账</string>
     <string name="dialog_edit_title">编辑记账记录</string>
     <string name="dialog_type_expense">支出</string>
     <string name="dialog_type_income">收入</string>
     <string name="dialog_amount">金额</string>
     <string name="dialog_title_label">项目名称</string>
-    <string name="dialog_category_label">记账类别</string>
+    <string name="dialog_category_label">记账分类</string>
     <string name="dialog_date_label">交易日期</string>
     <string name="dialog_note_label">备注 (可选)</string>
     <string name="dialog_btn_confirm">确定保存</string>
@@ -116,4 +140,30 @@
     <string name="diag_btn_copy">复制诊断报告</string>
     <string name="diag_btn_close">关闭</string>
     <string name="diag_copy_success">已复制诊断报告至剪贴板！</string>
+
+    <!-- Currency Exchange & Calculator Screen -->
+    <string name="exchange_title">外币汇率计算器</string>
+    <string name="exchange_last_updated">最近更新：%1$s</string>
+    <string name="exchange_updating">汇率更新中...</string>
+    <string name="exchange_update_success">汇率更新成功</string>
+    <string name="exchange_update_failed">无法获取最新汇率，已使用离线缓存</string>
+    <string name="exchange_select_currency">选择币种</string>
+    <string name="exchange_search_currency">搜索国家或币种...</string>
+    <string name="exchange_rate_label">1 %1$s = %2$s %3$s</string>
+    <string name="exchange_time_range_1w">1周</string>
+    <string name="exchange_time_range_1m">1个月</string>
+    <string name="exchange_time_range_3m">3个月</string>
+    <string name="exchange_time_range_1y">1年</string>
+    <string name="exchange_btn_import_bookkeeping">📥 记入账目</string>
+    <string name="exchange_popular_currencies">常用币种汇率对照</string>
+    <string name="exchange_note_template">外币换算：%1$s %2$s (汇率 %3$s)</string>
+
+    <!-- Widget -->
+    <string name="widget_title">MyMoneyKeep 智能记账</string>
+    <string name="widget_today_expense_label">今日支出</string>
+    <string name="widget_today_income_label">今日收入</string>
+    <string name="widget_month_balance_label">当月结余</string>
+    <string name="widget_btn_calc_label">🧮 汇率</string>
+    <string name="widget_btn_calc_action">🧮 汇率换算</string>
+    <string name="widget_btn_record_action">🎙️ 语音记账</string>
 </resources>

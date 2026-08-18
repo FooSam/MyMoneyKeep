@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="12dp">
 
     <!-- 頂部標題列 -->
     <LinearLayout
@@ -28,26 +28,27 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="MyMoneyKeep 雲端記帳"
+            android:text="@string/widget_title"
             android:textColor="#E2E8F0"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
 
+        <!-- 刷新按鈕 (放大點擊區域) -->
         <TextView
             android:id="@+id/widget_btn_refresh"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="4dp"
+            android:padding="6dp"
             android:text="🔄"
             android:textColor="#A0AEC0"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- 統計數據卡片列 -->
+    <!-- 中間：統計數據卡片列 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
         android:gravity="center_vertical"
@@ -62,9 +63,10 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/widget_label_today_expense"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="今日支出"
+                android:text="@string/widget_today_expense_label"
                 android:textColor="#A0AEC0"
                 android:textSize="11sp" />
 
@@ -77,7 +79,7 @@
                 android:maxLines="1"
                 android:text="NT$0"
                 android:textColor="#FC8181"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -90,9 +92,10 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/widget_label_today_income"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="今日收入"
+                android:text="@string/widget_today_income_label"
                 android:textColor="#A0AEC0"
                 android:textSize="11sp" />
 
@@ -105,7 +108,7 @@
                 android:maxLines="1"
                 android:text="NT$0"
                 android:textColor="#68D391"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -118,9 +121,10 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/widget_label_month_balance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="當月結餘"
+                android:text="@string/widget_month_balance_label"
                 android:textColor="#A0AEC0"
                 android:textSize="11sp" />
 
@@ -133,10 +137,46 @@
                 android:maxLines="1"
                 android:text="NT$0"
                 android:textColor="#63B3ED"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 
+    <!-- 底部：大尺寸快捷按鈕區 (匯率換算 & 語音記帳) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 🧮 匯率換算 大按鈕 -->
+        <TextView
+            android:id="@+id/widget_btn_calc"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_btn_bg"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/widget_btn_calc_action"
+            android:textColor="#63B3ED"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- 🎙️ 語音記帳 大按鈕 -->
+        <TextView
+            android:id="@+id/widget_btn_record"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_btn_bg"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/widget_btn_record_action"
+            android:textColor="#68D391"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </LinearLayout>

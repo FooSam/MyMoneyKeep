@@ -4,6 +4,7 @@
     <!-- Navigation -->
     <string name="nav_home">語音記帳</string>
     <string name="nav_ledger">記帳明細</string>
+    <string name="nav_exchange">匯率計算機</string>
     <string name="nav_reports">消費報表</string>
     <string name="nav_sync">帳號設定</string>
 
@@ -46,7 +47,9 @@
 
     <!-- Reports Screen -->
     <string name="reports_title">消費報表</string>
+    <string name="reports_weekly">週報表</string>
     <string name="reports_monthly">月度報表</string>
+    <string name="reports_quarterly">季度報表</string>
     <string name="reports_yearly">年度報表</string>
     <string name="reports_total_expense">總支出</string>
     <string name="reports_total_income">總收入</string>
@@ -56,14 +59,7 @@
 
     <!-- Settings / Sync Screen -->
     <string name="sync_title">帳號與一般設定</string>
-    <string name="sync_google_account_title">Google 帳號與雲端備份</string>
-    <string name="sync_account_logged_in">已登入帳號</string>
-    <string name="sync_account_not_logged_in">尚未登入 Google 帳號 (訪客模式)</string>
-    <string name="sync_btn_login">使用 Google 帳號登入</string>
-    <string name="sync_btn_logout">登出 Google 帳號</string>
-    <string name="sync_btn_sync_to_cloud">同步至雲端</string>
-    <string name="sync_btn_restore_from_cloud">從雲端還原</string>
-    <string name="sync_btn_paste_csv">貼上 CSV</string>
+    <string name="sync_general_settings">一般設定</string>
     <string name="sync_preferences_title">偏好設定</string>
     <string name="sync_pref_theme">介面主題 (Theme)</string>
     <string name="sync_pref_language">應用程式語系 (Language)</string>
@@ -85,11 +81,39 @@
     <string name="sync_diag_title">🔍 登入診斷記錄 (開發人員)</string>
     <string name="sync_diag_cleared">已清除診斷記錄</string>
     <string name="sync_easter_unlocked">🛠️ 已解鎖開發人員登入診斷記錄！</string>
-    <string name="sync_confirm_restore_title">從雲端試算表還原</string>
-    <string name="sync_confirm_restore_msg">從雲端還原將會以雲端試算表的資料覆寫本機資料，確定要繼續嗎？</string>
+
+    <string name="sync_google_account_title">Google 帳號與雲端備份</string>
+    <string name="sync_account_logged_in">已登入帳號</string>
+    <string name="sync_account_not_logged_in">尚未登入 Google 帳號 (訪客模式)</string>
+    <string name="sync_btn_login">使用 Google 帳號登入</string>
+    <string name="sync_btn_logout">登出 Google 帳號</string>
+    <string name="sync_btn_sync_to_cloud">同步至雲端</string>
+    <string name="sync_btn_restore_from_cloud">從雲端還原</string>
+    <string name="sync_drive_folder_label">雲端硬碟資料夾</string>
+    <string name="sync_google_sheet_label">Google 試算表</string>
+
+    <string name="sync_btn_architecture_guide">架構說明</string>
+    <string name="sync_architecture_title">雲端試算表儲存架構說明</string>
+    <string name="sync_architecture_folder_title">1. 專屬私有雲端資料夾</string>
+    <string name="sync_architecture_folder_desc">• 自動於您的 Google 雲端硬碟建立『MyMoneyKeep_雲端記帳本』資料夾，不與其他檔案混雜，隱私安全無虞。</string>
+    <string name="sync_architecture_yearly_title">2. 年度自動分表管理</string>
+    <string name="sync_architecture_yearly_desc">• 系統自動依年度建立獨立的 Google 試算表（例如：『2026_MyMoneyKeep_記帳本』）。即使記帳多年，單一檔案依然輕巧流暢，檢視與搜尋零卡頓。</string>
+    <string name="sync_architecture_style_title">3. 原生排版美化套版與自訂類別色彩</string>
+    <string name="sync_architecture_style_desc">• 同步時自動套用整齊排版（第一列標題橫幅、欄位置中、收入/支出/小計靠右對齊）。\n• 試算表中的『標題』文字會即時依據您在 APP 內為各類別設定的專屬色彩顯示，一目了然。</string>
+    <string name="sync_architecture_restore_title">4. 無損還原與全自動連線</string>
+    <string name="sync_architecture_restore_desc">• 換機或重新安裝時，按『從試算表還原』即可將雲端資料完整下載回手機，且完全不會破壞雲端既有的精美排版與樣式。\n• 免手動填寫複雜 ID，只要登入 Google 帳號即可全自動完成所有串接。</string>
+    <string name="sync_architecture_btn_close">了解並關閉</string>
+
+    <string name="sync_csv_backup_title">試算表全表CSV備份(複製/匯入)</string>
+    <string name="sync_csv_backup_desc">支援將目前所有記帳紀錄一鍵複製為標準 CSV 格式，或將外部 CSV 貼上匯入</string>
+    <string name="sync_btn_copy_csv">複製CSV試算表</string>
+    <string name="sync_btn_paste_csv">貼上 CSV</string>
     <string name="sync_paste_csv_title">貼上 CSV 數據匯入</string>
     <string name="sync_paste_csv_placeholder">在此貼上 CSV 格式內容...</string>
     <string name="sync_paste_csv_confirm">確認匯入</string>
+
+    <string name="sync_confirm_restore_title">從雲端試算表還原</string>
+    <string name="sync_confirm_restore_msg">從雲端還原將會以雲端試算表的資料覆寫本機資料，確定要繼續嗎？</string>
 
     <!-- Welcome & Login Screen -->
     <string name="welcome_title">MyMoneyKeep 雲端記帳本</string>
@@ -116,4 +140,30 @@
     <string name="diag_btn_copy">複製診斷報告</string>
     <string name="diag_btn_close">關閉</string>
     <string name="diag_copy_success">已複製診斷報告至剪貼簿！</string>
+
+    <!-- Currency Exchange & Calculator Screen -->
+    <string name="exchange_title">外幣匯率計算機</string>
+    <string name="exchange_last_updated">最近更新：%1$s</string>
+    <string name="exchange_updating">匯率更新中...</string>
+    <string name="exchange_update_success">匯率更新成功</string>
+    <string name="exchange_update_failed">無法取得最新匯率，已使用離線快取</string>
+    <string name="exchange_select_currency">選擇幣別</string>
+    <string name="exchange_search_currency">搜尋國家或幣別...</string>
+    <string name="exchange_rate_label">1 %1$s = %2$s %3$s</string>
+    <string name="exchange_time_range_1w">1週</string>
+    <string name="exchange_time_range_1m">1個月</string>
+    <string name="exchange_time_range_3m">3個月</string>
+    <string name="exchange_time_range_1y">1年</string>
+    <string name="exchange_btn_import_bookkeeping">📥 帶入記帳</string>
+    <string name="exchange_popular_currencies">常用幣別匯率對照</string>
+    <string name="exchange_note_template">外幣換算：%1$s %2$s (匯率 %3$s)</string>
+
+    <!-- Widget -->
+    <string name="widget_title">MyMoneyKeep 雲端記帳</string>
+    <string name="widget_today_expense_label">今日支出</string>
+    <string name="widget_today_income_label">今日收入</string>
+    <string name="widget_month_balance_label">當月結餘</string>
+    <string name="widget_btn_calc_label">🧮 匯率</string>
+    <string name="widget_btn_calc_action">🧮 匯率換算</string>
+    <string name="widget_btn_record_action">🎙️ 語音記帳</string>
 </resources>

@@ -41,9 +41,17 @@ fun LedgerScreen(viewModel: BookkeepingViewModel) {
     val sortDirection by viewModel.sortDirection.collectAsState()
 
     val customCategories by viewModel.customCategories.collectAsState()
+    val prefilledTransaction by viewModel.prefilledTransaction.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<TransactionEntity?>(null) }
+
+    LaunchedEffect(prefilledTransaction) {
+        prefilledTransaction?.let { prefilled ->
+            editingTransaction = prefilled
+            viewModel.clearPrefilledTransaction()
+        }
+    }
 
     Scaffold(
         topBar = {

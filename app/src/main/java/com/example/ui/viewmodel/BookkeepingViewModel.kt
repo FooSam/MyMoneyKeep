@@ -7,14 +7,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
 import com.example.data.model.CategoryType
 import com.example.data.model.ChatSender
+import com.example.data.model.CurrencyInfo
 import com.example.data.model.CustomCategory
+import com.example.data.model.ExchangeTimeRange
 import com.example.data.model.FinancialChatMessage
+import com.example.data.model.HistoricalRatePoint
+import com.example.data.model.SupportedCurrencies
 import com.example.data.model.TransactionEntity
 import com.example.data.network.GeminiBookkeepingParser
 import com.example.data.network.GeminiChatAgent
 import com.example.data.network.ParsedTransaction
+import com.example.data.repository.CurrencyRepository
 import com.example.data.repository.TransactionRepository
 import com.example.data.sync.GoogleDriveSyncManager
+import com.example.util.CalculatorEngine
 import com.example.widget.MyMoneyKeepWidgetProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -348,13 +354,72 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
     private val _lastAddedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val lastAddedTransaction: StateFlow<TransactionEntity?> = _lastAddedTransaction
 
+    // Currency Exchange & Calculator State
+    private val currencyRepository = CurrencyRepository(getApplication())
+
+    private val _baseCurrency = MutableStateFlow(SupportedCurrencies.findByCode("USD"))
+    val baseCurrency: StateFlow<CurrencyInfo> = _baseCurrency
+
+    private val _targetCurrency = MutableStateFlow(SupportedCurrencies.findByCode("TWD"))
+    val targetCurrency: StateFlow<CurrencyInfo> = _targetCurrency
+
+    private val _calcExpression = MutableStateFlow("1")
+    val calcExpression: StateFlow<String> = _calcExpression
+
+    private val _exchangeRates = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val exchangeRates: StateFlow<Map<String, Double>> = _exchangeRates
+
+    private val _currentRate = MutableStateFlow(31.90)
+    val currentRate: StateFlow<Double> = _currentRate
+
+    private val _historicalRates = MutableStateFlow<List<HistoricalRatePoint>>(emptyList())
+    val historicalRates: StateFlow<List<HistoricalRatePoint>> = _historicalRates
+
+    private val _exchangeTimeRange = MutableStateFlow(ExchangeTimeRange.ONE_MONTH)
+    val exchangeTimeRange: StateFlow<ExchangeTimeRange> = _exchangeTimeRange
+
+    private val _isExchangeLoading = MutableStateFlow(false)
+    val isExchangeLoading: StateFlow<Boolean> = _isExchangeLoading
+
+    private val _lastExchangeUpdate = MutableStateFlow("")
+    val lastExchangeUpdate: StateFlow<String> = _lastExchangeUpdate
+
+    private val _isExchangeFromCache = MutableStateFlow(false)
+    val isExchangeFromCache: StateFlow<Boolean> = _isExchangeFromCache
+
+    val calculatedBaseAmount: StateFlow<Double> = _calcExpression.map { expr ->
+        CalculatorEngine.evaluate(expr)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0)
+
+    val convertedTargetAmount: StateFlow<Double> = combine(calculatedBaseAmount, _currentRate) { amount, rate ->
+        amount * rate
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 31.90)
+
+    // 預填記帳資料（用於從計算機一鍵帶入記帳）
+    private val _prefilledTransaction = MutableStateFlow<TransactionEntity?>(null)
+    val prefilledTransaction: StateFlow<TransactionEntity?> = _prefilledTransaction
+
+    fun clearPrefilledTransaction() {
+        _prefilledTransaction.value = null
+    }
+
     init {
         val prefs = getApplication<Application>().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
         val savedLangCode = prefs.getString("selected_language_code", "zh-TW")
         _selectedLanguage.value = AppLanguage.fromCode(savedLangCode)
 
+        val savedCurrencyCode = prefs.getString("selected_currency_code", "TWD") ?: "TWD"
+        val matchedCurrency = AppCurrency.entries.find { it.code == savedCurrencyCode } ?: AppCurrency.TWD
+        _selectedCurrency.value = matchedCurrency
+
+        // 預設目標幣別依據使用者設定之記帳幣別
+        _targetCurrency.value = SupportedCurrencies.findByCode(matchedCurrency.code)
+
         viewModelScope.launch {
             repository.checkAndSeedInitialData()
+        }
+        viewModelScope.launch {
+            refreshExchangeRates(force = false)
         }
     }
 
@@ -362,10 +427,134 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
         _selectedLanguage.value = language
         val prefs = getApplication<Application>().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
         prefs.edit().putString("selected_language_code", language.code).apply()
+        MyMoneyKeepWidgetProvider.updateAllWidgets(getApplication())
     }
 
     fun setCurrency(currency: AppCurrency) {
         _selectedCurrency.value = currency
+        val prefs = getApplication<Application>().getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+        prefs.edit().putString("selected_currency_code", currency.code).apply()
+        _targetCurrency.value = SupportedCurrencies.findByCode(currency.code)
+        MyMoneyKeepWidgetProvider.updateAllWidgets(getApplication())
+        viewModelScope.launch {
+            updateCurrentRateAndHistory()
+        }
+    }
+
+    fun setBaseCurrency(currencyInfo: CurrencyInfo) {
+        if (_baseCurrency.value.code == currencyInfo.code) return
+        _baseCurrency.value = currencyInfo
+        viewModelScope.launch {
+            refreshExchangeRates(force = false)
+        }
+    }
+
+    fun setTargetCurrency(currencyInfo: CurrencyInfo) {
+        if (_targetCurrency.value.code == currencyInfo.code) return
+        _targetCurrency.value = currencyInfo
+        viewModelScope.launch {
+            updateCurrentRateAndHistory()
+        }
+    }
+
+    fun swapCurrencies() {
+        val oldBase = _baseCurrency.value
+        val oldTarget = _targetCurrency.value
+        _baseCurrency.value = oldTarget
+        _targetCurrency.value = oldBase
+        viewModelScope.launch {
+            refreshExchangeRates(force = false)
+        }
+    }
+
+    fun onCalcInput(key: String) {
+        _calcExpression.value = CalculatorEngine.processInput(_calcExpression.value, key)
+    }
+
+    fun clearCalcInput() {
+        _calcExpression.value = "0"
+    }
+
+    fun setExchangeTimeRange(range: ExchangeTimeRange) {
+        _exchangeTimeRange.value = range
+        viewModelScope.launch {
+            updateHistoricalRatesOnly()
+        }
+    }
+
+    fun refreshExchangeRates(force: Boolean = true) {
+        viewModelScope.launch {
+            _isExchangeLoading.value = true
+            try {
+                val baseCode = _baseCurrency.value.code
+                val result = currencyRepository.getExchangeRates(baseCode, forceRefresh = force)
+                _exchangeRates.value = result.rates
+                _lastExchangeUpdate.value = result.lastUpdateFormatted
+                _isExchangeFromCache.value = result.isFromCache
+
+                val targetCode = _targetCurrency.value.code
+                val rate = result.rates[targetCode] ?: 1.0
+                _currentRate.value = rate
+
+                // 抓取歷史走勢
+                val history = currencyRepository.getHistoricalRates(
+                    base = baseCode,
+                    target = targetCode,
+                    timeRange = _exchangeTimeRange.value,
+                    currentLiveRate = rate
+                )
+                _historicalRates.value = history
+            } catch (e: Exception) {
+                android.util.Log.e("BookkeepingVM", "Error refreshing exchange rates: ${e.message}", e)
+            } finally {
+                _isExchangeLoading.value = false
+            }
+        }
+    }
+
+    private suspend fun updateCurrentRateAndHistory() {
+        val targetCode = _targetCurrency.value.code
+        val baseCode = _baseCurrency.value.code
+        val rate = _exchangeRates.value[targetCode]
+        if (rate != null) {
+            _currentRate.value = rate
+            val history = currencyRepository.getHistoricalRates(
+                base = baseCode,
+                target = targetCode,
+                timeRange = _exchangeTimeRange.value,
+                currentLiveRate = rate
+            )
+            _historicalRates.value = history
+        } else {
+            refreshExchangeRates(force = false)
+        }
+    }
+
+    private suspend fun updateHistoricalRatesOnly() {
+        try {
+            val history = currencyRepository.getHistoricalRates(
+                base = _baseCurrency.value.code,
+                target = _targetCurrency.value.code,
+                timeRange = _exchangeTimeRange.value,
+                currentLiveRate = _currentRate.value
+            )
+            _historicalRates.value = history
+        } catch (e: Exception) {
+            android.util.Log.w("BookkeepingVM", "Error updating historical rates: ${e.message}")
+        }
+    }
+
+    fun prefillTransactionFromExchange(targetAmount: Double, note: String) {
+        val sdf = java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault())
+        val todayStr = sdf.format(java.util.Date())
+        _prefilledTransaction.value = TransactionEntity(
+            id = 0,
+            date = todayStr,
+            title = note,
+            expense = targetAmount,
+            income = null,
+            category = "C"
+        )
     }
 
     fun setStyleTheme(theme: AppStyleTheme) {

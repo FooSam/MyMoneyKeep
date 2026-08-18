@@ -166,7 +166,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
-                    text = { Text(stringResource(R.string.sync_preferences_title), fontWeight = FontWeight.Bold) },
+                    text = { Text(stringResource(R.string.sync_general_settings), fontWeight = FontWeight.Bold) },
                     icon = { Icon(imageVector = Icons.Default.Settings, contentDescription = "General Settings") }
                 )
                 Tab(
@@ -588,7 +588,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     )
 
                                     TextButton(onClick = { showArchitectureSolutionDialog = true }) {
-                                        Text("Guide", fontSize = 12.sp)
+                                        Text(stringResource(R.string.sync_btn_architecture_guide), fontSize = 12.sp)
                                     }
                                 }
 
@@ -610,7 +610,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column {
-                                                Text("Drive Folder", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(stringResource(R.string.sync_drive_folder_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Text(accountState.driveFolder, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                                             }
                                         }
@@ -626,7 +626,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column {
-                                                Text("Google Sheet", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(stringResource(R.string.sync_google_sheet_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Text(accountState.sheetTitle, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                                             }
                                         }
@@ -698,8 +698,14 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Text(
-                                    text = "CSV Backup",
+                                    text = stringResource(R.string.sync_csv_backup_title),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+
+                                Text(
+                                    text = stringResource(R.string.sync_csv_backup_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
 
                                 Row(
@@ -717,7 +723,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     ) {
                                         Icon(imageVector = Icons.Default.CloudUpload, contentDescription = "Export")
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Copy CSV", fontSize = 12.sp)
+                                        Text(stringResource(R.string.sync_btn_copy_csv), fontSize = 12.sp)
                                     }
 
                                     Button(
@@ -847,7 +853,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
             },
             confirmButton = {
                 TextButton(onClick = { showAboutDialog = false }) {
-                    Text(stringResource(R.string.dialog_btn_confirm))
+                    Text(stringResource(R.string.diag_btn_close))
                 }
             }
         )
@@ -1038,26 +1044,56 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     if (showArchitectureSolutionDialog) {
         AlertDialog(
             onDismissRequest = { showArchitectureSolutionDialog = false },
-            title = { Text(stringResource(R.string.sync_google_account_title)) },
+            title = { Text(stringResource(R.string.sync_architecture_title)) },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = "MyMoneyKeep Cloud Sync:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.sync_architecture_folder_title),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "• Google Drive Folder: MyMoneyKeep_云端记账本\n• Yearly Google Sheets auto sync\n• Support Restore from Cloud anytime",
+                        text = stringResource(R.string.sync_architecture_folder_desc),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = stringResource(R.string.sync_architecture_yearly_title),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_architecture_yearly_desc),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = stringResource(R.string.sync_architecture_style_title),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_architecture_style_desc),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = stringResource(R.string.sync_architecture_restore_title),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_architecture_restore_desc),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             },
             confirmButton = {
                 Button(onClick = { showArchitectureSolutionDialog = false }) {
-                    Text(stringResource(R.string.dialog_btn_confirm))
+                    Text(stringResource(R.string.sync_architecture_btn_close))
                 }
             }
         )

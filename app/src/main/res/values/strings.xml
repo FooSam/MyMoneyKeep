@@ -4,6 +4,7 @@
     <!-- Navigation -->
     <string name="nav_home">Voice</string>
     <string name="nav_ledger">Ledger</string>
+    <string name="nav_exchange">Calculator</string>
     <string name="nav_reports">Reports</string>
     <string name="nav_sync">Settings</string>
 
@@ -46,7 +47,9 @@
 
     <!-- Reports Screen -->
     <string name="reports_title">Expense Reports</string>
+    <string name="reports_weekly">Weekly</string>
     <string name="reports_monthly">Monthly</string>
+    <string name="reports_quarterly">Quarterly</string>
     <string name="reports_yearly">Yearly</string>
     <string name="reports_total_expense">Total Expense</string>
     <string name="reports_total_income">Total Income</string>
@@ -56,14 +59,7 @@
 
     <!-- Settings / Sync Screen -->
     <string name="sync_title">Account &amp; Settings</string>
-    <string name="sync_google_account_title">Google Account &amp; Cloud Backup</string>
-    <string name="sync_account_logged_in">Signed in</string>
-    <string name="sync_account_not_logged_in">Not signed in (Guest Mode)</string>
-    <string name="sync_btn_login">Sign in with Google</string>
-    <string name="sync_btn_logout">Sign Out</string>
-    <string name="sync_btn_sync_to_cloud">Sync to Cloud</string>
-    <string name="sync_btn_restore_from_cloud">Restore from Cloud</string>
-    <string name="sync_btn_paste_csv">Paste CSV</string>
+    <string name="sync_general_settings">General Settings</string>
     <string name="sync_preferences_title">Preferences</string>
     <string name="sync_pref_theme">App Theme</string>
     <string name="sync_pref_language">Language</string>
@@ -85,11 +81,39 @@
     <string name="sync_diag_title">🔍 Sign-In Diagnostic Log</string>
     <string name="sync_diag_cleared">Diagnostic log cleared</string>
     <string name="sync_easter_unlocked">🛠️ Developer sign-in diagnostics unlocked!</string>
-    <string name="sync_confirm_restore_title">Restore from Cloud</string>
-    <string name="sync_confirm_restore_msg">Restoring from cloud will replace local data. Do you want to continue?</string>
+
+    <string name="sync_google_account_title">Google Account &amp; Cloud Backup</string>
+    <string name="sync_account_logged_in">Signed in</string>
+    <string name="sync_account_not_logged_in">Not signed in (Guest Mode)</string>
+    <string name="sync_btn_login">Sign in with Google</string>
+    <string name="sync_btn_logout">Sign Out</string>
+    <string name="sync_btn_sync_to_cloud">Sync to Cloud</string>
+    <string name="sync_btn_restore_from_cloud">Restore from Cloud</string>
+    <string name="sync_drive_folder_label">Drive Folder</string>
+    <string name="sync_google_sheet_label">Google Sheet</string>
+
+    <string name="sync_btn_architecture_guide">Architecture Guide</string>
+    <string name="sync_architecture_title">Cloud Sheets Storage Architecture Guide</string>
+    <string name="sync_architecture_folder_title">1. Dedicated Private Cloud Folder</string>
+    <string name="sync_architecture_folder_desc">• Automatically creates a "MyMoneyKeep_云端记账本" folder in your Google Drive to keep files organized and secure.</string>
+    <string name="sync_architecture_yearly_title">2. Annual Multi-Sheet Management</string>
+    <string name="sync_architecture_yearly_desc">• Automatically creates separate Google Sheets by year (e.g. "2026_MyMoneyKeep_記帳本") to ensure smooth performance.</string>
+    <string name="sync_architecture_style_title">3. Formatted Layout &amp; Custom Category Colors</string>
+    <string name="sync_architecture_style_desc">• Formats rows and columns cleanly and applies custom category colors to item titles automatically.</string>
+    <string name="sync_architecture_restore_title">4. Lossless Restore &amp; Auto Connection</string>
+    <string name="sync_architecture_restore_desc">• Restore data anytime without losing styling. Zero configuration needed—just sign in with Google.</string>
+    <string name="sync_architecture_btn_close">Got it &amp; Close</string>
+
+    <string name="sync_csv_backup_title">CSV Full Backup (Copy / Import)</string>
+    <string name="sync_csv_backup_desc">Copy all records to clipboard in standard CSV format, or paste CSV to import.</string>
+    <string name="sync_btn_copy_csv">Copy CSV</string>
+    <string name="sync_btn_paste_csv">Paste CSV</string>
     <string name="sync_paste_csv_title">Paste CSV Data</string>
     <string name="sync_paste_csv_placeholder">Paste CSV content here...</string>
     <string name="sync_paste_csv_confirm">Import Data</string>
+
+    <string name="sync_confirm_restore_title">Restore from Cloud</string>
+    <string name="sync_confirm_restore_msg">Restoring from cloud will replace local data. Do you want to continue?</string>
 
     <!-- Welcome & Login Screen -->
     <string name="welcome_title">MyMoneyKeep</string>
@@ -116,4 +140,30 @@
     <string name="diag_btn_copy">Copy Report</string>
     <string name="diag_btn_close">Close</string>
     <string name="diag_copy_success">Diagnostic report copied to clipboard!</string>
+
+    <!-- Currency Exchange & Calculator Screen -->
+    <string name="exchange_title">Currency Calculator</string>
+    <string name="exchange_last_updated">Updated: %1$s</string>
+    <string name="exchange_updating">Updating exchange rates...</string>
+    <string name="exchange_update_success">Rates updated successfully</string>
+    <string name="exchange_update_failed">Failed to fetch live rates, using offline cache</string>
+    <string name="exchange_select_currency">Select Currency</string>
+    <string name="exchange_search_currency">Search currency or country...</string>
+    <string name="exchange_rate_label">1 %1$s = %2$s %3$s</string>
+    <string name="exchange_time_range_1w">1W</string>
+    <string name="exchange_time_range_1m">1M</string>
+    <string name="exchange_time_range_3m">3M</string>
+    <string name="exchange_time_range_1y">1Y</string>
+    <string name="exchange_btn_import_bookkeeping">📥 Record</string>
+    <string name="exchange_popular_currencies">Popular Exchange Rates</string>
+    <string name="exchange_note_template">Foreign currency: %1$s %2$s (Rate %3$s)</string>
+
+    <!-- Widget -->
+    <string name="widget_title">MyMoneyKeep</string>
+    <string name="widget_today_expense_label">Today Exp</string>
+    <string name="widget_today_income_label">Today Inc</string>
+    <string name="widget_month_balance_label">Month Bal</string>
+    <string name="widget_btn_calc_label">🧮 Calc</string>
+    <string name="widget_btn_calc_action">🧮 Exchange</string>
+    <string name="widget_btn_record_action">🎙️ Voice Record</string>
 </resources>

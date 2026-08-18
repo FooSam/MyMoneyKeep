@@ -68,9 +68,9 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                     ReportTimeRange.entries.forEachIndexed { index, range ->
                         val rangeLabel = when (range) {
                             ReportTimeRange.ALL -> stringResource(R.string.ledger_filter_all)
-                            ReportTimeRange.WEEK -> "Week"
+                            ReportTimeRange.WEEK -> stringResource(R.string.reports_weekly)
                             ReportTimeRange.MONTH -> stringResource(R.string.reports_monthly)
-                            ReportTimeRange.QUARTER -> "Quarter"
+                            ReportTimeRange.QUARTER -> stringResource(R.string.reports_quarterly)
                             ReportTimeRange.YEAR -> stringResource(R.string.reports_yearly)
                         }
                         SegmentedButton(

@@ -2,30 +2,31 @@
     <string name="app_name">가계부 도우미</string>
 
     <!-- Navigation -->
-    <string name="nav_home">음성 가계부</string>
+    <string name="nav_home">음성 기록</string>
     <string name="nav_ledger">내역</string>
+    <string name="nav_exchange">환율 계산기</string>
     <string name="nav_reports">보고서</string>
     <string name="nav_sync">설정</string>
 
     <!-- Home Screen -->
     <string name="home_month_balance">이번 달 잔액</string>
-    <string name="home_input_placeholder">음성 또는 텍스트 입력 (예: 점심 120)...</string>
+    <string name="home_input_placeholder">음성 또는 텍스트로 입력 (예: 점심 120)...</string>
     <string name="home_income">수입</string>
     <string name="home_expense">지출</string>
-    <string name="home_ai_listening">음성을 듣고 있습니다...</string>
+    <string name="home_ai_listening">듣는 중...</string>
     <string name="home_ai_analyzing">AI 분석 중...</string>
-    <string name="home_btn_save">내역 저장</string>
+    <string name="home_btn_save">기록 저장</string>
     <string name="home_btn_retry">다시 입력</string>
-    <string name="home_save_success">저장되었습니다!</string>
-    <string name="home_edit_dialog_title">내역 편집</string>
+    <string name="home_save_success">저장 완료!</string>
+    <string name="home_edit_dialog_title">내역 수정</string>
     <string name="home_engine_cloud_ai">✨ 클라우드 AI</string>
     <string name="home_engine_edge_nano">🧠 온디바이스 Nano</string>
-    <string name="home_engine_local_nlp">⚡ 오프라인 스마트</string>
-    <string name="home_recent_records">최근 내역</string>
-    <string name="home_voice_tooltip">탭하여 음성 입력 시작</string>
+    <string name="home_engine_local_nlp">⚡ 오프라인 자연어</string>
+    <string name="home_recent_records">최근 기록</string>
+    <string name="home_voice_tooltip">음성 입력을 시작하려면 탭하세요</string>
     <string name="home_voice_permission_required">음성 입력을 위해 마이크 권한이 필요합니다</string>
-    <string name="home_ai_chat_title">AI 재무 어드바이저</string>
-    <string name="home_btn_send">전송</string>
+    <string name="home_ai_chat_title">AI 금융 어드바이저</string>
+    <string name="home_btn_send">보내기</string>
 
     <!-- Ledger Screen -->
     <string name="ledger_title">가계부 내역</string>
@@ -38,32 +39,27 @@
     <string name="ledger_sort_category">카테고리</string>
     <string name="ledger_empty_records">기록이 없습니다</string>
     <string name="ledger_delete_confirm_title">삭제 확인</string>
-    <string name="ledger_delete_confirm_msg">이 내역을 삭제하시겠습니까?</string>
+    <string name="ledger_delete_confirm_msg">이 기록을 삭제하시겠습니까?</string>
     <string name="ledger_btn_delete">삭제</string>
     <string name="ledger_btn_cancel">취소</string>
-    <string name="ledger_btn_edit">편집</string>
-    <string name="ledger_item_count">총 %1$d건</string>
+    <string name="ledger_btn_edit">수정</string>
+    <string name="ledger_item_count">총 %1$d 건</string>
 
     <!-- Reports Screen -->
     <string name="reports_title">소비 보고서</string>
+    <string name="reports_weekly">주간</string>
     <string name="reports_monthly">월간</string>
+    <string name="reports_quarterly">분기별</string>
     <string name="reports_yearly">연간</string>
     <string name="reports_total_expense">총 지출</string>
     <string name="reports_total_income">총 수입</string>
-    <string name="reports_net_savings">순 잔액</string>
+    <string name="reports_net_savings">순 저축</string>
     <string name="reports_category_breakdown">카테고리별 지출</string>
-    <string name="reports_no_data">이 기간의 데이터가 없습니다</string>
+    <string name="reports_no_data">해당 기간의 데이터가 없습니다</string>
 
     <!-- Settings / Sync Screen -->
-    <string name="sync_title">계정 및 환경 설정</string>
-    <string name="sync_google_account_title">Google 계정 및 클라우드 동기화</string>
-    <string name="sync_account_logged_in">로그인됨</string>
-    <string name="sync_account_not_logged_in">로그인되지 않음 (게스트 모드)</string>
-    <string name="sync_btn_login">Google 계정으로 로그인</string>
-    <string name="sync_btn_logout">로그아웃</string>
-    <string name="sync_btn_sync_to_cloud">클라우드에 동기화</string>
-    <string name="sync_btn_restore_from_cloud">클라우드에서 복원</string>
-    <string name="sync_btn_paste_csv">CSV 붙여넣기</string>
+    <string name="sync_title">계정 및 일반 설정</string>
+    <string name="sync_general_settings">일반 설정</string>
     <string name="sync_preferences_title">환경 설정</string>
     <string name="sync_pref_theme">앱 테마</string>
     <string name="sync_pref_language">언어 (Language)</string>
@@ -71,49 +67,103 @@
     <string name="sync_pref_show_home_balance">홈 화면에 잔액 표시</string>
     <string name="sync_pref_show_home_balance_desc">홈 화면 우측 상단에 \'이번 달 잔액\' 배지 표시</string>
     <string name="sync_categories_title">카테고리 관리</string>
-    <string name="sync_categories_count">%1$d/%2$d개 카테고리 생성됨</string>
+    <string name="sync_categories_count">%1$d/%2$d 개 생성됨</string>
     <string name="sync_btn_add_category">카테고리 추가</string>
-    <string name="sync_dialog_add_cat_title">맞춤 카테고리 추가</string>
+    <string name="sync_dialog_add_cat_title">새 카테고리 추가</string>
     <string name="sync_dialog_cat_name">카테고리 이름</string>
     <string name="sync_dialog_cat_type">유형</string>
     <string name="sync_dialog_cat_color">색상</string>
     <string name="sync_gemini_api_title">Gemini AI API 키 설정</string>
-    <string name="sync_gemini_api_desc">AI 자연어 분석 및 스마트 분류 기능을 사용하려면 Gemini API 키를 입력하세요. 미입력 시 수동 규칙 검사가 적용됩니다.</string>
+    <string name="sync_gemini_api_desc">AI 자연어 분석 및 자동 분류 기능을 사용하려면 Gemini API 키를 입력하세요. 미입력 시 수동 규칙 검사가 적용됩니다.</string>
     <string name="sync_gemini_api_placeholder">Gemini API 키 입력</string>
     <string name="sync_btn_save_key">키 저장</string>
     <string name="sync_version_info_title">버전 정보</string>
     <string name="sync_diag_title">🔍 로그인 진단 로그 (개발자용)</string>
     <string name="sync_diag_cleared">진단 로그가 삭제되었습니다</string>
-    <string name="sync_easter_unlocked">🛠️ 개발자 로그인 진단 로그가 잠금 해제되었습니다!</string>
-    <string name="sync_confirm_restore_title">클라우드에서 복원</string>
-    <string name="sync_confirm_restore_msg">클라우드에서 복원하면 로컬 데이터가 덮어씌워집니다. 계속하시겠습니까?</string>
+    <string name="sync_easter_unlocked">🛠️ 개발자용 진단 로그가 잠금 해제되었습니다!</string>
+
+    <string name="sync_google_account_title">Google 계정 및 클라우드 백업</string>
+    <string name="sync_account_logged_in">로그인됨</string>
+    <string name="sync_account_not_logged_in">로그인되지 않음 (게스트 모드)</string>
+    <string name="sync_btn_login">Google 계정으로 로그인</string>
+    <string name="sync_btn_logout">로그아웃</string>
+    <string name="sync_btn_sync_to_cloud">클라우드에 동기화</string>
+    <string name="sync_btn_restore_from_cloud">클라우드에서 복원</string>
+    <string name="sync_drive_folder_label">드라이브 폴더</string>
+    <string name="sync_google_sheet_label">Google 스프레드시트</string>
+
+    <string name="sync_btn_architecture_guide">아키텍처 설명</string>
+    <string name="sync_architecture_title">클라우드 시트 저장 구조 안내</string>
+    <string name="sync_architecture_folder_title">1. 전용 개인 클라우드 폴더</string>
+    <string name="sync_architecture_folder_desc">• Google 드라이브에 \'MyMoneyKeep_云端记账本\' 폴더를 자동 생성하여 안전하게 보관합니다.</string>
+    <string name="sync_architecture_yearly_title">2. 연도별 자동 분할 관리</string>
+    <string name="sync_architecture_yearly_desc">• 연도별로 독립된 Google 시트를 자동 생성(예: \'2026_MyMoneyKeep_記帳本\')하여 쾌적한 속도를 유지합니다.</string>
+    <string name="sync_architecture_style_title">3. 서식 템플릿 및 사용자 지정 색상</string>
+    <string name="sync_architecture_style_desc">• 항목 이름에 설정한 카테고리 고유 색상을 자동 적용하여 보기 쉽게 정리합니다.</string>
+    <string name="sync_architecture_restore_title">4. 무손실 복원 및 자동 연결</string>
+    <string name="sync_architecture_restore_desc">• 서식 손상 없이 언제든지 클라우드에서 복원 가능합니다. Google 계정 로그인만으로 자동 연동됩니다.</string>
+    <string name="sync_architecture_btn_close">확인 및 닫기</string>
+
+    <string name="sync_csv_backup_title">CSV 전체 백업 (복사 / 가져오기)</string>
+    <string name="sync_csv_backup_desc">모든 기록을 표준 CSV 형식으로 복사하거나 CSV를 붙여넣어 가져옵니다</string>
+    <string name="sync_btn_copy_csv">CSV 복사</string>
+    <string name="sync_btn_paste_csv">CSV 붙여넣기</string>
     <string name="sync_paste_csv_title">CSV 데이터 가져오기</string>
     <string name="sync_paste_csv_placeholder">여기에 CSV 내용을 붙여넣으세요...</string>
     <string name="sync_paste_csv_confirm">가져오기 확인</string>
 
+    <string name="sync_confirm_restore_title">클라우드에서 복원</string>
+    <string name="sync_confirm_restore_msg">클라우드에서 복원하면 로컬 데이터가 덮어씌워집니다. 계속하시겠습니까?</string>
+
     <!-- Welcome & Login Screen -->
     <string name="welcome_title">MyMoneyKeep 클라우드 가계부</string>
-    <string name="welcome_subtitle">스마트 음성 입력 • 구글 시트 동기화 • 완전 오프라인 지원</string>
+    <string name="welcome_subtitle">스마트 음성 기록 • Google 시트 동기화 • 오프라인 완전 지원</string>
     <string name="welcome_btn_google">Google 계정으로 로그인</string>
-    <string name="welcome_btn_guest">게스트 모드 (기기 내 저장)</string>
-    <string name="welcome_privacy_note">귀하의 개인정보를 존중합니다. 모든 데이터는 기기와 개인 Google 드라이브에만 저장됩니다.</string>
+    <string name="welcome_btn_guest">게스트 모드 (기기에만 저장)</string>
+    <string name="welcome_privacy_note">사용자의 개인정보를 소중히 여깁니다. 데이터는 기기 및 개인 Google 드라이브에만 저장됩니다.</string>
 
     <!-- Add/Edit Transaction Dialog -->
-    <string name="dialog_add_title">내역 직접 추가</string>
-    <string name="dialog_edit_title">내역 편집</string>
+    <string name="dialog_add_title">거래 직접 추가</string>
+    <string name="dialog_edit_title">거래 내역 수정</string>
     <string name="dialog_type_expense">지출</string>
     <string name="dialog_type_income">수입</string>
     <string name="dialog_amount">금액</string>
     <string name="dialog_title_label">항목 이름</string>
     <string name="dialog_category_label">카테고리</string>
-    <string name="dialog_date_label">날짜</string>
-    <string name="dialog_note_label">메모 (선택사항)</string>
+    <string name="dialog_date_label">거래 날짜</string>
+    <string name="dialog_note_label">메모 (선택)</string>
     <string name="dialog_btn_confirm">저장</string>
     <string name="dialog_btn_cancel">취소</string>
 
     <!-- Diagnostics Dialog -->
-    <string name="diag_dialog_title">⚠️ Google 로그인 진단</string>
+    <string name="diag_dialog_title">⚠️ Google 로그인 실패 진단</string>
     <string name="diag_btn_copy">진단 보고서 복사</string>
     <string name="diag_btn_close">닫기</string>
-    <string name="diag_copy_success">진단 보고서가 클립보드에 복사되었습니다!</string>
+    <string name="diag_copy_success">진단 보고서를 클립보드에 복사했습니다!</string>
+
+    <!-- Currency Exchange & Calculator Screen -->
+    <string name="exchange_title">외화 환율 계산기</string>
+    <string name="exchange_last_updated">최근 업데이트: %1$s</string>
+    <string name="exchange_updating">환율 업데이트 중...</string>
+    <string name="exchange_update_success">환율 업데이트 완료</string>
+    <string name="exchange_update_failed">최신 환율을 가져오지 못했습니다 (오프라인 캐시 사용)</string>
+    <string name="exchange_select_currency">통화 선택</string>
+    <string name="exchange_search_currency">국가 또는 통화 검색...</string>
+    <string name="exchange_rate_label">1 %1$s = %2$s %3$s</string>
+    <string name="exchange_time_range_1w">1주일</string>
+    <string name="exchange_time_range_1m">1개월</string>
+    <string name="exchange_time_range_3m">3개월</string>
+    <string name="exchange_time_range_1y">1년</string>
+    <string name="exchange_btn_import_bookkeeping">📥 가계부에 입력</string>
+    <string name="exchange_popular_currencies">주요 통화 환율 비교</string>
+    <string name="exchange_note_template">외화 환산: %1$s %2$s (환율 %3$s)</string>
+
+    <!-- Widget -->
+    <string name="widget_title">MyMoneyKeep 가계부</string>
+    <string name="widget_today_expense_label">오늘 지출</string>
+    <string name="widget_today_income_label">오늘 수입</string>
+    <string name="widget_month_balance_label">당월 잔액</string>
+    <string name="widget_btn_calc_label">🧮 환율</string>
+    <string name="widget_btn_calc_action">🧮 환율 계산</string>
+    <string name="widget_btn_record_action">🎙️ 음성 기록</string>
 </resources>

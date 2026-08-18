@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,17 +21,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 
+import com.example.ui.screens.CurrencyCalculatorScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LedgerScreen
 import com.example.ui.screens.ReportsScreen
@@ -38,15 +46,11 @@ import com.example.ui.screens.WelcomeLoginScreen
 import com.example.ui.theme.MyMoneyKeepTheme
 import com.example.ui.viewmodel.BookkeepingViewModel
 import com.example.ui.viewmodel.LoginMode
+import com.example.util.LocaleHelper
 import com.example.widget.MyMoneyKeepWidgetProvider
 import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
-import com.example.util.LocaleHelper
 
 enum class NavigationTab(
     val titleResId: Int,
@@ -55,6 +59,7 @@ enum class NavigationTab(
 ) {
     HOME(R.string.nav_home, Icons.Filled.Mic, Icons.Outlined.Mic),
     LEDGER(R.string.nav_ledger, Icons.AutoMirrored.Filled.ListAlt, Icons.AutoMirrored.Outlined.ListAlt),
+    EXCHANGE(R.string.nav_exchange, Icons.Filled.Calculate, Icons.Outlined.Calculate),
     REPORTS(R.string.nav_reports, Icons.Filled.Analytics, Icons.Outlined.Analytics),
     SYNC(R.string.nav_sync, Icons.Filled.Settings, Icons.Outlined.Settings)
 }
@@ -140,7 +145,9 @@ class MainActivity : ComponentActivity() {
 
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
-                LocalConfiguration provides localizedConfiguration
+                LocalConfiguration provides localizedConfiguration,
+                LocalActivityResultRegistryOwner provides this@MainActivity,
+                LocalOnBackPressedDispatcherOwner provides this@MainActivity
             ) {
                 MyMoneyKeepTheme(styleTheme = styleTheme) {
                     if (showSignInDiagDialog) {
@@ -194,9 +201,18 @@ class MainActivity : ComponentActivity() {
                         var selectedTab by remember {
                             mutableStateOf(
                                 when (incomingAction) {
+                                    ACTION_OPEN_CALCULATOR -> NavigationTab.EXCHANGE
                                     else -> NavigationTab.HOME
                                 }
                             )
+                        }
+
+                        val intentAction by currentIntentAction.collectAsState()
+                        LaunchedEffect(intentAction) {
+                            if (intentAction == ACTION_OPEN_CALCULATOR) {
+                                selectedTab = NavigationTab.EXCHANGE
+                                currentIntentAction.value = null
+                            }
                         }
 
                         Scaffold(
@@ -229,6 +245,12 @@ class MainActivity : ComponentActivity() {
                                 when (selectedTab) {
                                     NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
                                     NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
+                                    NavigationTab.EXCHANGE -> CurrencyCalculatorScreen(
+                                        viewModel = viewModel,
+                                        onNavigateToLedgerWithPrefill = {
+                                            selectedTab = NavigationTab.LEDGER
+                                        }
+                                    )
                                     NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
                                     NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
                                 }
@@ -240,8 +262,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val currentIntentAction = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        currentIntentAction.value = intent.action
+    }
+
+    companion object {
+        const val ACTION_OPEN_CALCULATOR = "com.example.mymoneykeep.ACTION_OPEN_CALCULATOR"
     }
 }

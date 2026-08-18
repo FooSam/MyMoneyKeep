@@ -37,9 +37,11 @@ fun AddTransactionDialog(
     var isIncomeType by remember { mutableStateOf(transaction?.income != null && transaction.income > 0) }
     var amountText by remember {
         mutableStateOf(
-            if (transaction?.income != null && transaction.income > 0) transaction.income.toInt().toString()
-            else if (transaction?.expense != null) transaction.expense.toInt().toString()
-            else ""
+            if (transaction?.income != null && transaction.income > 0) {
+                if (transaction.income % 1.0 == 0.0) transaction.income.toLong().toString() else String.format(Locale.US, "%.2f", transaction.income)
+            } else if (transaction?.expense != null) {
+                if (transaction.expense % 1.0 == 0.0) transaction.expense.toLong().toString() else String.format(Locale.US, "%.2f", transaction.expense)
+            } else ""
         )
     }
 
