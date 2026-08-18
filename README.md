@@ -33,6 +33,12 @@
 - 🔒 **本地優先與隱私架構 (Local-First)**：
   - 所有收支明細預設儲存於手機本機 Room 資料庫，離線亦可完整使用。
   - 零第三方後端伺服器中轉，使用者財務資料 100% 完全由個人掌控。
+- 🛡️ **Firebase Crashlytics 雲端遙測與全域防護**：
+  - 整合 Google Services 與 Crashlytics SDK，全域捕獲未處理異常與非致命例外。
+  - 自動上傳 R8 混淆 mapping 檔，確保本地優先架構兼具企業級的穩定度。
+- 🩺 **OAuth 登入實時自檢與真機 SHA-1 診斷**：
+  - 遇登入授權錯誤 (Error 10) 時，App 自動於執行期提取當前手機真實運行的 SHA-1 憑證指紋。
+  - 彈出完整診斷對話框，支援一鍵複製 SHA-1 並提供 GCP 排查指南，免除猜測憑證的痛點。
 - 🎨 **現代化 Material 3 視覺體驗**：
   - 支援動態深淺色主題與多種風格切換。
   - 豐富的圖表統計、明細自訂排序、篩選與即時收支儀表板。
@@ -50,6 +56,9 @@
   - Google Drive REST API v3 / Google Sheets API v4
   - Google Gemini 2.5 Flash REST API (BYOK)
   - Retrofit 2, Moshi, OkHttp 3
+- **雲端遙測與分析**：
+  - Firebase Crashlytics (全域崩潰監控、R8 Mapping 自動反混淆)
+  - Firebase Analytics
 - **單元與截圖測試**：Robolectric, Roborazzi
 
 ---
@@ -90,16 +99,24 @@
 
 專案使用 Android 原生 OAuth 進行安全核對（依賴「App 包名 + 簽名憑證 SHA-1」）。若您希望在本地開發時測試 **Google 登入** 與 **Google Drive 雲端同步** 功能，請依以下步驟設定您個人的 Google Cloud Console：
 
-### 步驟 1：取得本地 Debug 簽名 SHA-1
-在專案根目錄終端機執行以下指令：
-```bash
-# Windows
-.\gradlew signingReport
+### 步驟 1：取得 SHA-1 簽名憑證指紋
 
-# macOS / Linux
-./gradlew signingReport
-```
-在輸出中找到 `Variant: debug` 區塊，複製其對應的 **`SHA1`** 指紋（格式如 `AA:BB:CC:...`）。
+專案提供「雙軌」便利取得方式：
+
+- **方法 A（推薦：App 實時自檢一鍵複製）**：
+  1. 編譯並在手機或模擬器啟動 App。
+  2. 點擊「使用 Google 帳號登入」，若尚未設定 GCP 憑證，App 會自動彈出 **【Google 登入失敗診斷】** 視窗。
+  3. 視窗內即時顯示當前運行的 **真實 SHA-1**，點擊 **「複製 SHA-1」** 即可直接取得！
+- **方法 B（命令列 signingReport）**：
+  在專案根目錄終端機執行：
+  ```bash
+  # Windows
+  .\gradlew signingReport
+
+  # macOS / Linux
+  ./gradlew signingReport
+  ```
+  在輸出中找到 `Variant: debug` 區塊，複製其對應的 **`SHA1`** 指紋（格式如 `AA:BB:CC:...`）。
 
 ### 步驟 2：在 Google Cloud Console 建立 OAuth 用戶端
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 並建立新專案（或選擇既有專案）。
@@ -134,15 +151,16 @@
 
 ## 📦 發布與 Release 打包 (Release Build)
 
-正式發布時，本專案由 `version.json` 統一管理版本號，並在 Release 打包時強制啟用 R8 程式碼混淆與資源壓縮：
+正式發布時，本專案由 `version.json` 統一管理版本號，並在 Release 打包時強制啟用 R8 程式碼混淆、資源壓縮與 Crashlytics 混淆 Mapping 自動上傳：
 
 ```powershell
-# PowerShell 打包指令範例
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\JDK\jdk17.0.19_10"
-$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+# 產出正式發布 APK
 .\gradlew :app:assembleRelease
+
+# 產出 Google Play 上架專用 AAB (Android App Bundle)
+.\gradlew :app:bundleRelease
 ```
-產出的 Release APK 將自動命名為 `${APP_ProductName}-v${APP_Version}-release.apk` 並匯出至 `Release/` 資料夾。
+產出的 Release APK / AAB 將自動命名為 `${APP_ProductName}-v${APP_Version}-release.apk` (或 `.aab`) 並匯出至 `Release/` 資料夾。
 
 ---
 
