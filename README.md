@@ -1,4 +1,4 @@
-# MyMoneyKeep - 智慧記帳助手 (Android)
+# MyMoneyKeep - 智慧雲端記帳本 (Android)
 
 <div align="center">
 
@@ -7,59 +7,77 @@
 ![Room](https://img.shields.io/badge/Room-Database-orange?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.00.00.38-brightgreen?style=flat-square)
 
-**一款以「本地優先、隱私安全、無伺服器」為核心的智慧型語音雲端記帳 Android 應用程式。**
+**一款以「本地優先、隱私安全、無伺服器、智能語音」為核心的現代化全方位記帳 Android 應用程式。**
 
 </div>
 
 ---
 
-## 🌟 核心特色
+## 🌟 核心特色 (Core Features)
 
-- 🎙️ **語音智慧記帳**：支援自然語言語音輸入，結合高階斷詞與類別推斷，迅速拆解消費品項、金額與分類。
-- 📱 **Android 桌面質感 Widget 小工具**：
-  - 於手機桌面即時預覽「今日支出」、「今日收入」與「當月結餘」。
-  - 點擊 Widget 即可 1 秒直達語音記帳畫面，大幅降低記帳摩擦力。
-- 💬 **對話式 AI 財務顧問 (Gemini 2.5 Flash)**：
-  - **Context RAG 財務脈絡注入**：直接在首頁向 AI 提問（如「8月午餐總共多少？」、「幫我分析這個月花費」），AI 將結合真實記帳數據進行精確計算、按時間順向列出明細並提供 3 點省錢建議。
-  - **零思考雜訊秒級回應**：針對 Gemini 2.5 Flash 專屬調校，提供流暢的繁體中文（zh-TW）專業分析。
-- 🧠 **本地端 Gemini Nano 離線辨識與三軌智能調度**：
-  - 第一軌：**雲端 Gemini 2.5 Flash** (BYOK 深度財務對話與精確解析)。
-  - 第二軌：**地端 Edge AI / Gemini Nano** (Android AICore 本機神經網路適配)。
-  - 第三軌：**本地高階語意引擎** (支援中文數字「一百八」、「兩千五」、「1.5萬」轉換、相對日期與智慧分類，100% 離線可用)。
-- ☁️ **Google Drive 個人雲端試算表同步**：
-  - 採用 Android 原生 OAuth 安全授權，直接連線使用者個人的 Google 雲端硬碟。
-  - 自動於雲端建立專屬記帳資料夾並生成原生的 **Google 試算表 (Google Sheets)**，點開直接以試算表格子檢視，並支援一鍵下載還原至手機。
-- 🔒 **本地優先與隱私架構 (Local-First)**：
-  - 所有收支明細預設儲存於手機本機 Room 資料庫，離線亦可完整使用。
-  - 零第三方後端伺服器中轉，使用者財務資料 100% 完全由個人掌控。
-- 🛡️ **Firebase Crashlytics 雲端遙測與全域防護**：
-  - 整合 Google Services 與 Crashlytics SDK，全域捕獲未處理異常與非致命例外。
-  - 自動上傳 R8 混淆 mapping 檔，確保本地優先架構兼具企業級的穩定度。
-- 🩺 **OAuth 登入實時自檢與真機 SHA-1 診斷**：
-  - 遇登入授權錯誤 (Error 10) 時，App 自動於執行期提取當前手機真實運行的 SHA-1 憑證指紋。
-  - 彈出完整診斷對話框，支援一鍵複製 SHA-1 並提供 GCP 排查指南，免除猜測憑證的痛點。
-- 🎨 **現代化 Material 3 視覺體驗**：
-  - 支援動態深淺色主題與多種風格切換。
-  - 豐富的圖表統計、明細自訂排序、篩選與即時收支儀表板。
+### 1. 🎙️ 智慧語音記帳與三軌智能調度
+- **自然語言秒級辨識**：支援語音或文字自然語言輸入（例如：「午餐 120」、「昨天加 95 無鉛汽油 800 元」），自動精準拆解品項、金額、交易類別與日期。
+- **三軌智慧調度引擎**：
+  - **第一軌：雲端 Gemini 2.5 Flash**（支援 BYOK 自自帶金鑰，提供深度財務解析與對話顧問）。
+  - **第二軌：地端 Edge AI / Gemini Nano**（適配 Android AICore 離線神經網路加速）。
+  - **第三軌：本地高階規則引擎**（支援「一百八」、「兩千五」、「1.5萬」等中文數字轉換、相對日期換算與離線分類，100% 離線可用）。
+
+### 2. 🧮 二合一「外幣匯率計算機」與無縫記帳連動
+- **160+ 國貨幣即時匯率**：整合 ExchangeRate-API 與 Frankfurter API，提供全球多國貨幣即時換算與國旗 Emoji 選擇清單。
+- **平滑歷史走勢圖表**：提供 1週 (1W)、1個月 (1M)、3個月 (3M)、1年 (1Y) 之平滑貝茲曲線匯率趨勢圖。
+- **內建高精度計算機**：支援四則運算（`+`、`-`、`×`、`÷`、`=`、`C`、`⌫`），並提供專屬 **「📥 帶入記帳」** 鍵，一鍵自動將折算本幣金額與外幣匯率備註帶入記帳明細！
+- **離線快取支援**：無網路環境下自動備退使用本機快取匯率，並提供常用幣別匯率快速對照清單。
+
+### 3. 📊 多維度消費報表與圓餅圖分析
+- **靈活時間維度切換**：支援「全部」、「週報表」、「月度報表」、「季度報表」、「年度報表」切換，並可透過日期選單或左右切換鈕快速瀏覽前後期數據。
+- **互動式支出佔比圓餅圖**：直觀視覺化呈現各類別支出比例，並即時統計總收入、總支出與淨結餘。
+
+### 4. 📱 4*2 桌面質感 Widget 小工具全新升級
+- **桌面即時收支看板**：於手機桌面 4*2 尺寸即時呈現「今日支出」、「今日收入」與「當月結餘」，排版勻稱緊湊。
+- **大按鈕獨立快捷操作**：
+  - **【🧮 匯率換算】**：大尺寸圓角按鈕，點擊直接精準開啟外幣計算機頁面。
+  - **【🎙️ 語音記帳】**：點擊直達 App 首頁開始記帳。
+  - **【🔄 重新整理】**：右上角放大點擊區，隨時一鍵更新最新桌面數據。
+
+### 5. ☁️ Google Drive 個人雲端試算表自動同步
+- **零中轉私有雲端架構**：採用 Android 原生 OAuth 安全授權，直連使用者個人的 Google 雲端硬碟，零第三方伺服器中轉。
+- **年度自動分表與美化排版**：
+  - 自動於雲端建立『MyMoneyKeep_雲端記帳本』專屬資料夾，並依年份建立獨立 Google 試算表（如『2026_MyMoneyKeep_記帳本』）。
+  - 同步時自動套用整齊排版與自訂類別顏色標記，點開試算表一目了然。
+  - 支援隨時 **「從雲端還原」**，換機或重裝無損下載歷史數據。
+
+### 6. 🌐 全介面 5 大多國語系即時切換
+- 支援 **繁體中文 (zh-TW)**、**簡體中文 (zh-CN)**、**英文 (English)**、**日文 (日本語)**、**韓文 (한국어)** 5 種語言即時切換，所有畫面、按鈕、彈窗與 Widget 全面本地化。
+
+### 7. 💾 試算表全表 CSV 備份與匯入/匯出
+- 支援將全表記帳資料一鍵複製為標準 CSV 格式至剪貼簿，亦可直接貼上外部 CSV 數據快速匯入。
+
+### 8. 🎨 自訂收支類別與代表色彩
+- 支援自訂多達 20 種類別名稱、收支屬性（收入/支出）與 16 款預設標籤代表色，類別色彩同步連動 App 報表與 Google 試算表。
+
+### 9. 🛡️ 企業級安全性與除錯診斷
+- **Firebase Crashlytics 遙測**：全域未處理例外捕捉，Release 自動上傳 R8 mapping 檔。
+- **開發者真機 SHA-1 診斷**：點擊版本資訊 6 次可開啟登入診斷工具，一鍵複製真機運行 SHA-1 憑證與 GCP OAuth 排查報告。
 
 ---
 
 ## 🛠️ 技術棧 (Tech Stack)
 
-- **UI 框架**：Jetpack Compose (Material 3), Navigation Compose, Android AppWidget (Glance-ready)
-- **架構設計**：MVVM 架構、Unidirectional Data Flow (UDF)、Local-First RAG
-- **非同步與狀態**：Kotlin Coroutines, StateFlow, SharedFlow
-- **本地資料持久化**：Room Database (KSP)
-- **雲端與網路**：
+- **UI 與設計系統**：Jetpack Compose (Material 3), Navigation Compose, Android AppWidget (RemoteViews)
+- **架構設計**：MVVM 架構、單向資料流 (UDF)、本地優先架構 (Local-First Architecture)
+- **非同步與響應式**：Kotlin Coroutines, StateFlow, SharedFlow
+- **本地資料庫**：Room Database (KSP)
+- **網路與雲端串接**：
   - Google Play Services Auth (原生 Android OAuth 登入)
   - Google Drive REST API v3 / Google Sheets API v4
   - Google Gemini 2.5 Flash REST API (BYOK)
+  - ExchangeRate-API / Frankfurter API (外幣即時匯率)
   - Retrofit 2, Moshi, OkHttp 3
-- **雲端遙測與分析**：
-  - Firebase Crashlytics (全域崩潰監控、R8 Mapping 自動反混淆)
-  - Firebase Analytics
-- **單元與截圖測試**：Robolectric, Roborazzi
+- **語系與本地化**：LocaleHelper (Context Wrapper 多國語系動態切換)
+- **雲端監控與遙測**：Firebase Crashlytics, Firebase Analytics
+- **自動化測試**：Robolectric, JUnit 4, Roborazzi
 
 ---
 
@@ -83,16 +101,6 @@
 3. **執行專案**：
    - 連接 Android 實機或啟動模擬器，點擊 **Run 'app'** 即可立即體驗訪客模式與本機記帳功能！
 
-> 💡 **關於 `local.properties` 與 Android SDK 設定備註**：
-> - **使用 Android Studio**：開啟專案時 IDE 會自動偵測本機 SDK 並自動在專案目錄產生 `local.properties`，無需手動建立。
-> - **使用命令列 (CLI) 或 CI/CD 編譯**：請確保系統已設定環境變數 `ANDROID_HOME`（或 `ANDROID_SDK_ROOT`），或手動在 `MyMoneyKeep` 根目錄建立 `local.properties` 並指定 SDK 路徑：
->   ```properties
->   # Windows 範例
->   sdk.dir=C\:\\Users\\<您的使用者名稱>\\AppData\\Local\\Android\\Sdk
->   # macOS 範例
->   sdk.dir=/Users/<您的使用者名稱>/Library/Android/sdk
->   ```
-
 ---
 
 ## 🔐 Google 登入與雲端備份設定 (開發者指引)
@@ -100,41 +108,31 @@
 專案使用 Android 原生 OAuth 進行安全核對（依賴「App 包名 + 簽名憑證 SHA-1」）。若您希望在本地開發時測試 **Google 登入** 與 **Google Drive 雲端同步** 功能，請依以下步驟設定您個人的 Google Cloud Console：
 
 ### 步驟 1：取得 SHA-1 簽名憑證指紋
-
-專案提供「雙軌」便利取得方式：
-
 - **方法 A（推薦：App 實時自檢一鍵複製）**：
   1. 編譯並在手機或模擬器啟動 App。
   2. 點擊「使用 Google 帳號登入」，若尚未設定 GCP 憑證，App 會自動彈出 **【Google 登入失敗診斷】** 視窗。
-  3. 視窗內即時顯示當前運行的 **真實 SHA-1**，點擊 **「複製 SHA-1」** 即可直接取得！
+  3. 視窗內即時顯示當前運行的 **真實 SHA-1**，點擊 **「複製診斷報告」** 即可直接取得！
 - **方法 B（命令列 signingReport）**：
   在專案根目錄終端機執行：
   ```bash
-  # Windows
   .\gradlew signingReport
-
-  # macOS / Linux
-  ./gradlew signingReport
   ```
-  在輸出中找到 `Variant: debug` 區塊，複製其對應的 **`SHA1`** 指紋（格式如 `AA:BB:CC:...`）。
+  在輸出中找到 `Variant: debug` 區塊，複製其對應的 **`SHA1`** 指紋。
 
 ### 步驟 2：在 Google Cloud Console 建立 OAuth 用戶端
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 並建立新專案（或選擇既有專案）。
-2. 進入 **【API 和服務】** > **【已啟用的 API 和服務】**，點擊 **啟用 API 和服務**，搜尋並啟用以下兩項 API：
-   - **`Google Drive API`**（用於資料夾與檔案管理）
-   - **`Google Sheets API`**（用於試算表數據讀寫與原生美化排版）
+2. 進入 **【API 和服務】** > **【已啟用的 API 和服務】**，搜尋並啟用以下兩項 API：
+   - **`Google Drive API`**
+   - **`Google Sheets API`**
 3. 進入 **【API 和服務】** > **【OAuth 同意畫面】**：
-   - 依指示設定應用程式名稱與支援信箱。
    - 於【範圍 (Scopes)】中新增 `https://www.googleapis.com/auth/drive` 與 `https://www.googleapis.com/auth/spreadsheets`。
    - 若發布狀態為「測試中」，請在【測試使用者】中加入您自己的 Google 帳號。
 4. 進入 **【API 和服務】** > **【憑證】**：
    - 點擊 **建立憑證** > **OAuth 用戶端 ID**。
    - 應用程式類型選擇：**Android**。
-   - **套件名稱 (Package Name)**：`com.aistudio.mymoneykeep.app`（直接填寫專案預設包名即可）。
+   - **套件名稱 (Package Name)**：`com.aistudio.mymoneykeep.app`
    - **SHA-1 憑證指紋**：貼上步驟 1 取得的 SHA-1。
-5. 點擊 **建立** 儲存。
-
-> 💡 **備註**：完成設定後，您在本地編譯運行的 App 即可直接點擊 Google 登入，並與您的 Google 試算表進行雲端同步與自動排版！
+5. 點擊 **建立** 儲存即可！
 
 ---
 
@@ -144,17 +142,17 @@
 
 1. 前往 [Google AI Studio](https://aistudio.google.com/) 免費申請個人專屬的 Gemini API Key。
 2. 開啟 App，切換至 **【帳號設定】** 頁籤。
-3. 在 **「Gemini AI 辨識密鑰 (API Key) 設定」** 欄位貼上您的金鑰並儲存。
-4. 儲存後即可在【語音記帳】直接以語音或文字進行自然語言記帳與對話問答（例如：「8月午餐總共多少」、「幫我分析這個月花費」），享受無思考雜訊、極速秒回的專業財務顧問體驗！未填寫 Key 時亦可使用本機離線規則與 Gemini Nano 基礎辨識。
+3. 在 **「Gemini AI API Key 設定」** 欄位貼上您的金鑰並點擊儲存。
+4. 儲存後即可在【語音記帳】直接以語音或文字進行自然語言記帳與對話問答（例如：「8月午餐總共多少」、「幫我分析這個月花費」），享受極速秒回的專業財務顧問體驗！未填寫 Key 時亦可使用本機離線規則與 Gemini Nano 基礎辨識。
 
 ---
 
 ## 📦 發布與 Release 打包 (Release Build)
 
-正式發布時，本專案由 `version.json` 統一管理版本號，並在 Release 打包時強制啟用 R8 程式碼混淆、資源壓縮與 Crashlytics 混淆 Mapping 自動上傳：
+正式發布時，本專案由 `version.json` 統一管理版本號，並在 Release 打包時強制啟用 R8 程式碼混淆、無用資源壓縮與 Crashlytics 混淆 Mapping 自動上傳：
 
 ```powershell
-# 產出正式發布 APK
+# 產出正式發布 APK (實機安裝測試)
 .\gradlew :app:assembleRelease
 
 # 產出 Google Play 上架專用 AAB (Android App Bundle)
