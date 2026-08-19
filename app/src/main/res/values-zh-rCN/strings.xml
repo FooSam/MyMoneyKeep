@@ -141,6 +141,21 @@
     <string name="diag_btn_close">关闭</string>
     <string name="diag_copy_success">已复制诊断报告至剪贴板！</string>
 
+    <string name="sync_diag_report_title">同步诊断报告</string>
+    <string name="sync_toast_csv_copied">已复制 CSV 表格至剪贴板</string>
+    <string name="sync_toast_csv_imported">CSV 数据已成功导入！</string>
+    <string name="sync_toast_copied">已复制至剪贴板！</string>
+    <string name="sync_toast_key_saved">API Key 已成功保存！</string>
+    <string name="sync_toast_synced">✅ 云端表格同步成功：%1$s</string>
+    <string name="sync_toast_restore_success">从云端表格还原成功！</string>
+    <string name="sync_toast_restore_failed">云端还原失败，请检查网络连接或授权</string>
+    <string name="sync_retain_data_title">Google 账号登录</string>
+    <string name="sync_retain_data_msg">是否保留此设备上的 %1$d 条本地记账记录？</string>
+    <string name="sync_btn_retain_data">保留本地数据</string>
+    <string name="sync_btn_clear_local_data">清除本地数据</string>
+    <string name="sync_about_version">版本：%1$s</string>
+    <string name="sync_about_copyright">版权所有 © 2026 凡夫俗子工作室</string>
+
     <!-- Currency Exchange & Calculator Screen -->
     <string name="exchange_title">外币汇率计算器</string>
     <string name="exchange_last_updated">最近更新：%1$s</string>
@@ -154,12 +169,15 @@
     <string name="exchange_time_range_1m">1个月</string>
     <string name="exchange_time_range_3m">3个月</string>
     <string name="exchange_time_range_1y">1年</string>
-    <string name="exchange_btn_import_bookkeeping">📥 记入账目</string>
+    <string name="exchange_btn_import_bookkeeping">📥 带入记账</string>
     <string name="exchange_popular_currencies">常用币种汇率对照</string>
     <string name="exchange_note_template">外币换算：%1$s %2$s (汇率 %3$s)</string>
+    <string name="exchange_trend_title">%1$s/%2$s 历史走势</string>
+    <string name="exchange_trend_collapse">收起走势图</string>
+    <string name="exchange_trend_expand">展开走势图</string>
 
     <!-- Widget -->
-    <string name="widget_title">MyMoneyKeep 智能记账</string>
+    <string name="widget_title">MyMoneyKeep 云端记账</string>
     <string name="widget_today_expense_label">今日支出</string>
     <string name="widget_today_income_label">今日收入</string>
     <string name="widget_month_balance_label">当月结余</string>

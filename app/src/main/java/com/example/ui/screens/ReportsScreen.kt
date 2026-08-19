@@ -41,6 +41,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
     var periodMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -58,7 +59,7 @@ fun ReportsScreen(viewModel: BookkeepingViewModel) {
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)
+            contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp)
         ) {
             // Time Range Tabs
             item {

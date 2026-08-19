@@ -141,6 +141,21 @@
     <string name="diag_btn_close">Close</string>
     <string name="diag_copy_success">Diagnostic report copied to clipboard!</string>
 
+    <string name="sync_diag_report_title">Sync Diagnostic</string>
+    <string name="sync_toast_csv_copied">CSV copied to clipboard</string>
+    <string name="sync_toast_csv_imported">CSV imported successfully!</string>
+    <string name="sync_toast_copied">Copied to clipboard!</string>
+    <string name="sync_toast_key_saved">API Key saved successfully!</string>
+    <string name="sync_toast_synced">✅ Synced: %1$s</string>
+    <string name="sync_toast_restore_success">Restored from cloud successfully!</string>
+    <string name="sync_toast_restore_failed">Cloud restore failed, please check network or authorization</string>
+    <string name="sync_retain_data_title">Google Sign-In</string>
+    <string name="sync_retain_data_msg">Retain local %1$d records on this device?</string>
+    <string name="sync_btn_retain_data">Retain Data</string>
+    <string name="sync_btn_clear_local_data">Clear Local Data</string>
+    <string name="sync_about_version">Version: %1$s</string>
+    <string name="sync_about_copyright">Copyright © 2026 Ordinary People Studio</string>
+
     <!-- Currency Exchange & Calculator Screen -->
     <string name="exchange_title">Currency Calculator</string>
     <string name="exchange_last_updated">Updated: %1$s</string>
@@ -157,6 +172,9 @@
     <string name="exchange_btn_import_bookkeeping">📥 Record</string>
     <string name="exchange_popular_currencies">Popular Exchange Rates</string>
     <string name="exchange_note_template">Foreign currency: %1$s %2$s (Rate %3$s)</string>
+    <string name="exchange_trend_title">%1$s/%2$s Trend</string>
+    <string name="exchange_trend_collapse">Collapse Trend</string>
+    <string name="exchange_trend_expand">Expand Trend</string>
 
     <!-- Widget -->
     <string name="widget_title">MyMoneyKeep</string>

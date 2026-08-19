@@ -141,6 +141,21 @@
     <string name="diag_btn_close">닫기</string>
     <string name="diag_copy_success">진단 보고서를 클립보드에 복사했습니다!</string>
 
+    <string name="sync_diag_report_title">동기화 진단 보고서</string>
+    <string name="sync_toast_csv_copied">CSV가 클립보드에 복사되었습니다</string>
+    <string name="sync_toast_csv_imported">CSV 데이터가 성공적으로 가져와졌습니다!</string>
+    <string name="sync_toast_copied">클립보드에 복사되었습니다!</string>
+    <string name="sync_toast_key_saved">API Key가 저장되었습니다!</string>
+    <string name="sync_toast_synced">✅ 스프레드시트 동기화 성공: %1$s</string>
+    <string name="sync_toast_restore_success">클라우드에서 성공적으로 복원되었습니다!</string>
+    <string name="sync_toast_restore_failed">클라우드 복원에 실패했습니다. 네트워크 또는 인증을 확인하세요</string>
+    <string name="sync_retain_data_title">Google 계정 로그인</string>
+    <string name="sync_retain_data_msg">이 기기의 %1$d개 로컬 기록을 유지하시겠습니까?</string>
+    <string name="sync_btn_retain_data">로컬 데이터 유지</string>
+    <string name="sync_btn_clear_local_data">로컬 데이터 지우기</string>
+    <string name="sync_about_version">버전: %1$s</string>
+    <string name="sync_about_copyright">저작권 © 2026 Ordinary People Studio</string>
+
     <!-- Currency Exchange & Calculator Screen -->
     <string name="exchange_title">외화 환율 계산기</string>
     <string name="exchange_last_updated">최근 업데이트: %1$s</string>
@@ -157,6 +172,9 @@
     <string name="exchange_btn_import_bookkeeping">📥 가계부에 입력</string>
     <string name="exchange_popular_currencies">주요 통화 환율 비교</string>
     <string name="exchange_note_template">외화 환산: %1$s %2$s (환율 %3$s)</string>
+    <string name="exchange_trend_title">%1$s/%2$s 과거 추이</string>
+    <string name="exchange_trend_collapse">추이 차트 접기</string>
+    <string name="exchange_trend_expand">추이 차트 펼치기</string>
 
     <!-- Widget -->
     <string name="widget_title">MyMoneyKeep 가계부</string>

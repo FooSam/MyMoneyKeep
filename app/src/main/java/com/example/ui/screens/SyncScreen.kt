@@ -11,22 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.ManageAccounts
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,6 +33,8 @@ import com.example.ui.viewmodel.AppCurrency
 import com.example.ui.viewmodel.AppLanguage
 import com.example.ui.viewmodel.AppStyleTheme
 import com.example.ui.viewmodel.BookkeepingViewModel
+import com.example.ui.theme.ColorExpense
+import com.example.ui.theme.ColorIncome
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,6 +130,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -395,14 +383,14 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
-                                                text = "${cat.code}：${cat.name}",
+                                                text = "${cat.code} ${cat.name}",
                                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = if (cat.isIncome) "[${stringResource(R.string.home_income)}]" else "[${stringResource(R.string.home_expense)}]",
+                                                text = if (cat.isIncome) stringResource(R.string.dialog_type_income) else stringResource(R.string.dialog_type_expense),
                                                 style = MaterialTheme.typography.labelSmall,
-                                                color = if (cat.isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                                color = if (cat.isIncome) ColorIncome else ColorExpense
                                             )
                                         }
 
@@ -416,20 +404,19 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Edit,
-                                                    contentDescription = "Edit Category",
-                                                    modifier = Modifier.size(18.dp),
+                                                    contentDescription = "Edit",
+                                                    modifier = Modifier.size(16.dp),
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
-
                                             IconButton(
                                                 onClick = { categoryToDelete = cat },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Delete Category",
-                                                    modifier = Modifier.size(18.dp),
+                                                    contentDescription = "Delete",
+                                                    modifier = Modifier.size(16.dp),
                                                     tint = MaterialTheme.colorScheme.error
                                                 )
                                             }
@@ -440,72 +427,51 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                         }
                     }
 
-                    // About App Card
+                    // Version Info Card (連點 6 次解鎖診斷按鈕)
                     item {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     versionClickCount++
-                                    if (versionClickCount >= 6 && !isDiagVisible) {
+                                    if (versionClickCount >= 6) {
                                         isDiagVisible = true
                                         Toast.makeText(context, context.getString(R.string.sync_easter_unlocked), Toast.LENGTH_SHORT).show()
                                     }
-                                    showAboutDialog = true
                                 },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = stringResource(R.string.app_name),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                    text = "${stringResource(R.string.welcome_title)} v${com.example.BuildConfig.VERSION_NAME}",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = stringResource(R.string.sync_version_info_title),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = stringResource(R.string.sync_about_copyright),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            }
-                        }
-                    }
 
-                    // 登入診斷按鈕 (開發診斷用，點擊版本資訊 6 次後顯示)
-                    if (isDiagVisible) {
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val diagFile = java.io.File(context.filesDir, "sign_in_error.txt")
-                                        diagLogContent = if (diagFile.exists()) diagFile.readText() else "目前無診斷記錄。\n請嘗試登入失敗後再點此查看。"
-                                        showDiagDialog = true
-                                    },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.sync_diag_title),
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                                    )
-                                    Text(
-                                        text = "View Log",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                if (isDiagVisible) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Button(
+                                        onClick = {
+                                            val diagFile = java.io.File(context.filesDir, "sign_in_error.txt")
+                                            diagLogContent = if (diagFile.exists()) diagFile.readText() else "目前無診斷記錄。\n請嘗試登入失敗後再點此查看。"
+                                            showDiagDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                    ) {
+                                        Icon(Icons.Default.BugReport, contentDescription = "Diag", modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(stringResource(R.string.sync_diag_title))
+                                    }
                                 }
                             }
                         }
@@ -516,57 +482,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                     // 頁籤 2: 【帳號設定】
                     // ==========================================
 
-                    // Google Account Status Card
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountCircle,
-                                    contentDescription = "Google Account",
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = if (accountState.isSignedIn) accountState.displayName else stringResource(R.string.sync_account_not_logged_in),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                    )
-                                    Text(
-                                        text = if (accountState.isSignedIn) accountState.email else stringResource(R.string.welcome_subtitle),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Button(
-                                    onClick = {
-                                        if (accountState.isSignedIn) {
-                                            viewModel.syncManager.signOut()
-                                        } else {
-                                            signInLauncher.launch(viewModel.syncManager.getSignInIntent())
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (accountState.isSignedIn) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-                                        contentColor = if (accountState.isSignedIn) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary
-                                    )
-                                ) {
-                                    Text(stringResource(if (accountState.isSignedIn) R.string.sync_btn_logout else R.string.sync_btn_login))
-                                }
-                            }
-                        }
-                    }
-
-                    // Google Sheets Configuration Card
+                    // Google Account & Cloud Backup Card
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -588,120 +504,152 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     )
 
                                     TextButton(onClick = { showArchitectureSolutionDialog = true }) {
+                                        Icon(Icons.Default.Info, contentDescription = "Guide", modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(stringResource(R.string.sync_btn_architecture_guide), fontSize = 12.sp)
                                     }
                                 }
 
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                if (accountState.isSignedIn) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Folder,
-                                                contentDescription = "Folder",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp)
+                                        Icon(
+                                            imageVector = Icons.Default.AccountCircle,
+                                            contentDescription = "User",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(36.dp)
+                                        )
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = accountState.email,
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                                             )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Column {
-                                                Text(stringResource(R.string.sync_drive_folder_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text(accountState.driveFolder, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                            }
+                                            Text(
+                                                text = stringResource(R.string.sync_account_logged_in),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
                                         }
-
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Description,
-                                                contentDescription = "Sheet",
-                                                tint = MaterialTheme.colorScheme.secondary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Column {
-                                                Text(stringResource(R.string.sync_google_sheet_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text(accountState.sheetTitle, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                            }
+                                        OutlinedButton(
+                                            onClick = { viewModel.logoutGoogle() },
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Text(stringResource(R.string.sync_btn_logout), fontSize = 12.sp)
                                         }
                                     }
-                                }
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+
+                                    // Cloud Info
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                            text = stringResource(R.string.sync_drive_folder_label),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = accountState.driveFolder,
+                                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = stringResource(R.string.sync_google_sheet_label),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = accountState.sheetTitle,
+                                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    val success = viewModel.syncToGoogleDrive()
+                                                    val finalState = viewModel.googleAccountState.value
+                                                    if (success) {
+                                                        Toast.makeText(context, context.getString(R.string.sync_toast_synced, finalState.sheetTitle), Toast.LENGTH_LONG).show()
+                                                    } else {
+                                                        syncErrorDetail = finalState.lastSyncError.ifBlank { "Sync failed. Please check network connection." }
+                                                        showSyncErrorDialog = true
+                                                    }
+                                                }
+                                            },
+                                            enabled = !accountState.isSyncing,
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            if (accountState.isSyncing) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    color = MaterialTheme.colorScheme.onPrimary,
+                                                    strokeWidth = 2.dp
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text("...")
+                                            } else {
+                                                Icon(Icons.Default.CloudUpload, contentDescription = "Sync", modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(stringResource(R.string.sync_btn_sync_to_cloud))
+                                            }
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { showRestoreConfirmDialog = true },
+                                            enabled = !accountState.isSyncing,
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Icon(Icons.Default.CloudDownload, contentDescription = "Restore", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(stringResource(R.string.sync_btn_restore_from_cloud))
+                                        }
+                                    }
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.sync_account_not_logged_in),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                     Button(
                                         onClick = {
-                                            coroutineScope.launch {
-                                                val success = viewModel.syncToGoogleDrive()
-                                                val finalState = viewModel.googleAccountState.value
-                                                if (success) {
-                                                    Toast.makeText(context, "✅ Synced: ${finalState.sheetTitle}", Toast.LENGTH_LONG).show()
-                                                } else {
-                                                    syncErrorDetail = finalState.lastSyncError.ifBlank { "Sync failed. Please check network connection." }
-                                                    showSyncErrorDialog = true
-                                                }
-                                            }
+                                            signInLauncher.launch(viewModel.syncManager.getSignInIntent())
                                         },
-                                        enabled = accountState.isSignedIn && !accountState.isSyncing,
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(10.dp)
                                     ) {
-                                        if (accountState.isSyncing) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(20.dp),
-                                                color = MaterialTheme.colorScheme.onPrimary,
-                                                strokeWidth = 2.dp
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text("...")
-                                        } else {
-                                            Icon(imageVector = Icons.Default.CloudUpload, contentDescription = "Sync")
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(stringResource(R.string.sync_btn_sync_to_cloud))
-                                        }
-                                    }
-
-                                    OutlinedButton(
-                                        onClick = {
-                                            showRestoreConfirmDialog = true
-                                        },
-                                        enabled = accountState.isSignedIn && !accountState.isSyncing,
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Icon(imageVector = Icons.Default.CloudDownload, contentDescription = "Restore")
+                                        Icon(Icons.Default.AccountCircle, contentDescription = "Login", modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(stringResource(R.string.sync_btn_restore_from_cloud))
+                                        Text(stringResource(R.string.sync_btn_login))
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Backup & CSV Import/Export
+                    // CSV Backup Card
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Text(
                                     text = stringResource(R.string.sync_csv_backup_title),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                                 )
-
                                 Text(
                                     text = stringResource(R.string.sync_csv_backup_desc),
                                     style = MaterialTheme.typography.bodySmall,
@@ -712,50 +660,49 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    OutlinedButton(
+                                    Button(
                                         onClick = {
                                             val csvData = viewModel.exportCsv()
                                             clipboardManager.setText(AnnotatedString(csvData))
-                                            Toast.makeText(context, "CSV copied to clipboard", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(context, context.getString(R.string.sync_toast_csv_copied), Toast.LENGTH_LONG).show()
                                         },
                                         modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(10.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.CloudUpload, contentDescription = "Export")
+                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy CSV", modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(stringResource(R.string.sync_btn_copy_csv), fontSize = 12.sp)
+                                        Text(stringResource(R.string.sync_btn_copy_csv))
                                     }
 
-                                    Button(
+                                    OutlinedButton(
                                         onClick = { showImportDialog = true },
                                         modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(10.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.CloudDownload, contentDescription = "Import")
+                                        Icon(Icons.Default.Download, contentDescription = "Paste CSV", modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(stringResource(R.string.sync_btn_paste_csv), fontSize = 12.sp)
+                                        Text(stringResource(R.string.sync_btn_paste_csv))
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Gemini AI API Key Card
+                    // Gemini AI Configuration Card (帳號設定頁面)
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Text(
                                     text = stringResource(R.string.sync_gemini_api_title),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                                 )
-
                                 Text(
                                     text = stringResource(R.string.sync_gemini_api_desc),
                                     style = MaterialTheme.typography.bodySmall,
@@ -764,34 +711,30 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
 
                                 OutlinedTextField(
                                     value = customApiKeyInput,
-                                    onValueChange = {
-                                        customApiKeyInput = it
-                                        viewModel.syncManager.updateGeminiApiKey(it)
-                                    },
+                                    onValueChange = { customApiKeyInput = it },
                                     label = { Text(stringResource(R.string.sync_gemini_api_placeholder)) },
-                                    leadingIcon = { Icon(imageVector = Icons.Default.Key, contentDescription = "API Key") },
+                                    singleLine = true,
+                                    visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     trailingIcon = {
                                         IconButton(onClick = { isApiKeyVisible = !isApiKeyVisible }) {
                                             Icon(
-                                                imageVector = if (isApiKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                contentDescription = "Toggle Visibility"
+                                                imageVector = if (isApiKeyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                                contentDescription = "Toggle Key Visibility"
                                             )
                                         }
                                     },
-                                    visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                    singleLine = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
-                                OutlinedButton(
+                                Button(
                                     onClick = {
                                         viewModel.syncManager.updateGeminiApiKey(customApiKeyInput)
-                                        Toast.makeText(context, "API Key Saved", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.sync_toast_key_saved), Toast.LENGTH_SHORT).show()
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Icon(imageVector = Icons.Default.Check, contentDescription = "Save Key")
+                                    Icon(Icons.Default.Key, contentDescription = "Save Key", modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(stringResource(R.string.sync_btn_save_key))
                                 }
@@ -822,7 +765,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                     onClick = {
                         viewModel.importCsv(csvImportText)
                         showImportDialog = false
-                        Toast.makeText(context, "CSV imported", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, context.getString(R.string.sync_toast_csv_imported), Toast.LENGTH_LONG).show()
                     },
                     enabled = csvImportText.isNotBlank()
                 ) {
@@ -846,9 +789,9 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                 Column {
                     Text(stringResource(R.string.welcome_title), fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Version: ${com.example.BuildConfig.VERSION_NAME}")
+                    Text(stringResource(R.string.sync_about_version, com.example.BuildConfig.VERSION_NAME))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Copyright © 2026 Ordinary People Studio")
+                    Text(stringResource(R.string.sync_about_copyright))
                 }
             },
             confirmButton = {
@@ -859,7 +802,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
         )
     }
 
-    // Detailed Sync Error Dialog
+    // Detailed Sync Error / Diagnostic Report Dialog
     if (showSyncErrorDialog) {
         AlertDialog(
             onDismissRequest = { showSyncErrorDialog = false },
@@ -872,7 +815,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Sync Diagnostic", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(stringResource(R.string.sync_diag_report_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
             },
             text = {
@@ -896,7 +839,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                 Button(
                     onClick = {
                         clipboardManager.setText(AnnotatedString(syncErrorDetail))
-                        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.sync_toast_copied), Toast.LENGTH_SHORT).show()
                         showSyncErrorDialog = false
                     },
                     shape = RoundedCornerShape(10.dp)
@@ -914,7 +857,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
         )
     }
 
-    // 登入診斷 Dialog
+    // === 登入診斷 Dialog ===
     if (showDiagDialog) {
         AlertDialog(
             onDismissRequest = { showDiagDialog = false },
@@ -951,7 +894,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                 Button(
                     onClick = {
                         clipboardManager.setText(AnnotatedString(diagLogContent))
-                        Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.sync_toast_copied), Toast.LENGTH_SHORT).show()
                         showDiagDialog = false
                     },
                     shape = RoundedCornerShape(10.dp),
@@ -1014,9 +957,9 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
     if (showRetainDataDialog) {
         AlertDialog(
             onDismissRequest = { showRetainDataDialog = false },
-            title = { Text("Google Sign-In") },
+            title = { Text(stringResource(R.string.sync_retain_data_title)) },
             text = {
-                Text("Retain local ${allTransactions.size} records on your device?")
+                Text(stringResource(R.string.sync_retain_data_msg, allTransactions.size))
             },
             confirmButton = {
                 Button(
@@ -1025,7 +968,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                         showRetainDataDialog = false
                     }
                 ) {
-                    Text("Retain Data")
+                    Text(stringResource(R.string.sync_btn_retain_data))
                 }
             },
             dismissButton = {
@@ -1035,7 +978,7 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                         showRetainDataDialog = false
                     }
                 ) {
-                    Text("Clear Local Data")
+                    Text(stringResource(R.string.sync_btn_clear_local_data))
                 }
             }
         )
@@ -1114,9 +1057,9 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                         coroutineScope.launch {
                             val success = viewModel.restoreFromGoogleDrive()
                             if (success) {
-                                Toast.makeText(context, "Restored successfully", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.sync_toast_restore_success), Toast.LENGTH_LONG).show()
                             } else {
-                                Toast.makeText(context, "Restore failed", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.sync_toast_restore_failed), Toast.LENGTH_LONG).show()
                             }
                         }
                     }
@@ -1173,12 +1116,20 @@ fun EditCategoryDialog(
                         selected = !isIncome,
                         onClick = { isIncome = false },
                         label = { Text(stringResource(R.string.dialog_type_expense)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ColorExpense.copy(alpha = 0.2f),
+                            selectedLabelColor = ColorExpense
+                        ),
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
                         selected = isIncome,
                         onClick = { isIncome = true },
                         label = { Text(stringResource(R.string.dialog_type_income)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ColorIncome.copy(alpha = 0.2f),
+                            selectedLabelColor = ColorIncome
+                        ),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -1198,7 +1149,7 @@ fun EditCategoryDialog(
                             colorRow.forEach { hex ->
                                 val color = try {
                                     Color(android.graphics.Color.parseColor(hex))
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     Color.Gray
                                 }
                                 val isSelected = hex.equals(selectedColorHex, ignoreCase = true)
@@ -1228,7 +1179,11 @@ fun EditCategoryDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onSave(name, isIncome, selectedColorHex) },
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(name.trim(), isIncome, selectedColorHex)
+                    }
+                },
                 enabled = name.isNotBlank()
             ) {
                 Text(stringResource(R.string.dialog_btn_confirm))

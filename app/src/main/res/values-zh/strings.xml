@@ -141,6 +141,21 @@
     <string name="diag_btn_close">關閉</string>
     <string name="diag_copy_success">已複製診斷報告至剪貼簿！</string>
 
+    <string name="sync_diag_report_title">同步診斷報告</string>
+    <string name="sync_toast_csv_copied">已複製 CSV 試算表至剪貼簿</string>
+    <string name="sync_toast_csv_imported">CSV 數據已成功匯入！</string>
+    <string name="sync_toast_copied">已複製至剪貼簿！</string>
+    <string name="sync_toast_key_saved">API Key 已成功儲存！</string>
+    <string name="sync_toast_synced">✅ 雲端試算表同步成功：%1$s</string>
+    <string name="sync_toast_restore_success">從雲端試算表還原成功！</string>
+    <string name="sync_toast_restore_failed">雲端還原失敗，請檢查網路連線或 Google 授權</string>
+    <string name="sync_retain_data_title">Google 帳號登入</string>
+    <string name="sync_retain_data_msg">是否保留此裝置上的 %1$d 筆本機記帳紀錄？</string>
+    <string name="sync_btn_retain_data">保留本機資料</string>
+    <string name="sync_btn_clear_local_data">清除本機資料</string>
+    <string name="sync_about_version">版本：%1$s</string>
+    <string name="sync_about_copyright">版權所有 © 2026 凡夫俗子工作室</string>
+
     <!-- Currency Exchange & Calculator Screen -->
     <string name="exchange_title">外幣匯率計算機</string>
     <string name="exchange_last_updated">最近更新：%1$s</string>
@@ -157,6 +172,9 @@
     <string name="exchange_btn_import_bookkeeping">📥 帶入記帳</string>
     <string name="exchange_popular_currencies">常用幣別匯率對照</string>
     <string name="exchange_note_template">外幣換算：%1$s %2$s (匯率 %3$s)</string>
+    <string name="exchange_trend_title">%1$s/%2$s 歷史走勢</string>
+    <string name="exchange_trend_collapse">收合走勢圖</string>
+    <string name="exchange_trend_expand">展開走勢圖</string>
 
     <!-- Widget -->
     <string name="widget_title">MyMoneyKeep 雲端記帳</string>

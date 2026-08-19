@@ -54,6 +54,7 @@ fun LedgerScreen(viewModel: BookkeepingViewModel) {
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -94,7 +95,7 @@ fun LedgerScreen(viewModel: BookkeepingViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true
             )
 
@@ -174,7 +175,7 @@ fun LedgerScreen(viewModel: BookkeepingViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentPadding = PaddingValues(bottom = 80.dp)
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(transactions, key = { it.id }) { item ->
                         val catObj = viewModel.getCategoryByCode(item.category)

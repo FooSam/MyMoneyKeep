@@ -66,6 +66,7 @@ fun CurrencyCalculatorScreen(
 
     var showCurrencyDialogForBase by remember { mutableStateOf(false) }
     var showCurrencyDialogForTarget by remember { mutableStateOf(false) }
+    var isTrendExpanded by remember { mutableStateOf(true) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "spin")
     val spinAngle by infiniteTransition.animateFloat(
@@ -79,6 +80,7 @@ fun CurrencyCalculatorScreen(
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -121,7 +123,7 @@ fun CurrencyCalculatorScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 1. 幣別與國旗選擇卡片 (對標易匯率)
             Card(
@@ -196,7 +198,7 @@ fun CurrencyCalculatorScreen(
                 }
             }
 
-            // 3. 雙向金額換算顯示區
+            // 3. 雙向金額換算顯示區 (Display Screen)
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -265,52 +267,7 @@ fun CurrencyCalculatorScreen(
                 }
             }
 
-            // 4. 歷史匯率走勢折線圖
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${baseCurrency.code}/${targetCurrency.code} 走勢",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                        )
-
-                        // 週期按鈕
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TimeRangeButton("1週", timeRange == ExchangeTimeRange.ONE_WEEK) {
-                                viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_WEEK)
-                            }
-                            TimeRangeButton("1月", timeRange == ExchangeTimeRange.ONE_MONTH) {
-                                viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_MONTH)
-                            }
-                            TimeRangeButton("3月", timeRange == ExchangeTimeRange.THREE_MONTHS) {
-                                viewModel.setExchangeTimeRange(ExchangeTimeRange.THREE_MONTHS)
-                            }
-                            TimeRangeButton("1年", timeRange == ExchangeTimeRange.ONE_YEAR) {
-                                viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_YEAR)
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 繪製平滑走勢圖
-                    ExchangeRateLineChart(
-                        historicalPoints = historicalRates,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp)
-                    )
-                }
-            }
-
-            // 5. 自訂計算機數字鍵盤 (Custom Keypad)
+            // 4. 自訂計算機數字鍵盤 (Custom Keypad) - 緊接在金額顯示區下方，一體化操作！
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
@@ -383,6 +340,66 @@ fun CurrencyCalculatorScreen(
                                 maxLines = 1
                             )
                         }
+                    }
+                }
+            }
+
+            // 5. 歷史匯率走勢折線圖 (移至下方，支援展開/收合)
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isTrendExpanded = !isTrendExpanded },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (isTrendExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (isTrendExpanded) stringResource(R.string.exchange_trend_collapse) else stringResource(R.string.exchange_trend_expand),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.exchange_trend_title, baseCurrency.code, targetCurrency.code),
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                        if (isTrendExpanded) {
+                            // 週期按鈕
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TimeRangeButton(stringResource(R.string.exchange_time_range_1w), timeRange == ExchangeTimeRange.ONE_WEEK) {
+                                    viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_WEEK)
+                                }
+                                TimeRangeButton(stringResource(R.string.exchange_time_range_1m), timeRange == ExchangeTimeRange.ONE_MONTH) {
+                                    viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_MONTH)
+                                }
+                                TimeRangeButton(stringResource(R.string.exchange_time_range_3m), timeRange == ExchangeTimeRange.THREE_MONTHS) {
+                                    viewModel.setExchangeTimeRange(ExchangeTimeRange.THREE_MONTHS)
+                                }
+                                TimeRangeButton(stringResource(R.string.exchange_time_range_1y), timeRange == ExchangeTimeRange.ONE_YEAR) {
+                                    viewModel.setExchangeTimeRange(ExchangeTimeRange.ONE_YEAR)
+                                }
+                            }
+                        }
+                    }
+
+                    if (isTrendExpanded) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // 繪製平滑走勢圖
+                        ExchangeRateLineChart(
+                            historicalPoints = historicalRates,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(130.dp)
+                        )
                     }
                 }
             }
