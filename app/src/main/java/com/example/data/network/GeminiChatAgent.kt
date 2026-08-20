@@ -5,6 +5,7 @@ import com.example.data.model.FinancialChatMessage
 import com.example.data.model.TransactionEntity
 import com.example.ui.viewmodel.AppCurrency
 import com.example.ui.viewmodel.AppLanguage
+import com.example.util.DateUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -184,8 +185,8 @@ class GeminiChatAgent {
         }
 
         // 嚴格依時間順向（由舊至新、由早到晚，例如 8/1 -> 8/2 -> 8/3...）排序
-        monthTransactions.sortWith(compareBy({ parseDateToComparable(it.date) }, { it.id }))
-        val sortedAllTxs = transactions.sortedWith(compareBy({ parseDateToComparable(it.date) }, { it.id }))
+        monthTransactions.sortWith(compareBy({ DateUtils.parseDateToComparable(it.date) }, { it.id }))
+        val sortedAllTxs = transactions.sortedWith(compareBy({ DateUtils.parseDateToComparable(it.date) }, { it.id }))
 
         val monthBalance = monthIncome - monthExpense
         val totalBalance = allIncome - allExpense
@@ -323,20 +324,5 @@ class GeminiChatAgent {
             2. 本月已記錄 ${transactions.size} 筆收支，持續維持記帳是累積財富的最佳起點！
             3. 若有大額非必要開銷，可設定預算上限以防止月末超支。$apiKeyNotice
         """.trimIndent()
-    }
-
-    private fun parseDateToComparable(dateStr: String): Long {
-        return try {
-            val clean = dateStr.trim().replace("-", "/")
-            val parts = clean.split("/")
-            if (parts.size >= 3) {
-                val y = parts[0].toLongOrNull() ?: 0L
-                val m = parts[1].toLongOrNull() ?: 0L
-                val d = parts[2].toLongOrNull() ?: 0L
-                y * 10000L + m * 100L + d
-            } else 0L
-        } catch (e: Exception) {
-            0L
-        }
     }
 }

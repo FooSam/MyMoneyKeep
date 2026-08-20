@@ -21,6 +21,7 @@ import com.example.data.repository.CurrencyRepository
 import com.example.data.repository.TransactionRepository
 import com.example.data.sync.GoogleDriveSyncManager
 import com.example.util.CalculatorEngine
+import com.example.util.DateUtils
 import com.example.widget.MyMoneyKeepWidgetProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -801,9 +802,19 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
         when (field) {
             SortField.DATE -> {
                 if (dir == SortDirection.ASC) {
-                    filtered.sortedBy { parseDateString(it.date)?.let { pd -> pd.year * 10000 + pd.month * 100 + pd.day } ?: 0 }
+                    filtered.sortedWith(
+                        compareBy(
+                            { DateUtils.parseDateToComparable(it.date) },
+                            { it.itemNo },
+                            { it.id }
+                        )
+                    )
                 } else {
-                    filtered.sortedByDescending { parseDateString(it.date)?.let { pd -> pd.year * 10000 + pd.month * 100 + pd.day } ?: 0 }
+                    filtered.sortedWith(
+                        compareByDescending<TransactionEntity> { DateUtils.parseDateToComparable(it.date) }
+                            .thenByDescending { it.itemNo }
+                            .thenByDescending { it.id }
+                    )
                 }
             }
             SortField.TITLE -> {

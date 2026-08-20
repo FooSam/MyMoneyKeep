@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import com.example.data.model.CustomCategory
 import com.example.data.model.TransactionEntity
+import com.example.util.DateUtils
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -313,7 +314,13 @@ class GoogleDriveSyncManager(private val context: Context) {
                 }
             }
 
-            val sortedTransactions = transactions.sortedBy { it.date }
+            val sortedTransactions = transactions.sortedWith(
+                compareBy(
+                    { DateUtils.parseDateToComparable(it.date) },
+                    { it.itemNo },
+                    { it.id }
+                )
+            )
 
             // 雙層同步機制：優先使用 Google Sheets API 原生兩階段處理
             currentStep = "步驟 3：試算表數據寫入與原生排版套版"
@@ -336,8 +343,12 @@ class GoogleDriveSyncManager(private val context: Context) {
                 // 第 2 列：欄位標頭
                 valuesList.add(listOf("項目", "日期", "標題", "類別", "收入", "支出", "小計"))
 
-                // 第 3 列起：資料列
+                // 第 3 列起：資料列 (依日期順序累加計算小計)
+                var runningSubtotal = 0.0
                 sortedTransactions.forEachIndexed { index, t ->
+                    val inc = t.income ?: 0.0
+                    val exp = t.expense ?: 0.0
+                    runningSubtotal += (inc - exp)
                     valuesList.add(
                         listOf(
                             index + 1,
@@ -346,7 +357,7 @@ class GoogleDriveSyncManager(private val context: Context) {
                             t.category,
                             t.income?.takeIf { it > 0 } ?: "",
                             t.expense?.takeIf { it > 0 } ?: "",
-                            t.subtotal
+                            runningSubtotal
                         )
                     )
                 }
@@ -726,7 +737,13 @@ class GoogleDriveSyncManager(private val context: Context) {
                             }
                         }
                     }
-                    val sortedList = rawList.sortedBy { it.date }
+                    val sortedList = rawList.sortedWith(
+                        compareBy(
+                            { DateUtils.parseDateToComparable(it.date) },
+                            { it.itemNo },
+                            { it.id }
+                        )
+                    )
                     var currentSubtotal = 0.0
                     sortedList.mapIndexed { index, t ->
                         if (t.income != null) currentSubtotal += t.income
@@ -766,11 +783,22 @@ class GoogleDriveSyncManager(private val context: Context) {
         val sb = java.lang.StringBuilder()
         sb.append("# MyMoneyKeep 雲端記帳本 ($currentYear 年度)\n")
         sb.append("項目,日期,標題,類別,收入,支出,小計\n")
-        transactions.sortedBy { it.date }.forEachIndexed { index, t ->
+        val sortedTransactions = transactions.sortedWith(
+            compareBy(
+                { DateUtils.parseDateToComparable(it.date) },
+                { it.itemNo },
+                { it.id }
+            )
+        )
+        var runningSubtotal = 0.0
+        sortedTransactions.forEachIndexed { index, t ->
+            val inc = t.income ?: 0.0
+            val exp = t.expense ?: 0.0
+            runningSubtotal += (inc - exp)
             val itemNum = index + 1
             val incomeStr = t.income?.takeIf { it > 0 }?.run { if (this % 1.0 == 0.0) this.toLong().toString() else this.toString() } ?: ""
             val expenseStr = t.expense?.takeIf { it > 0 }?.run { if (this % 1.0 == 0.0) this.toLong().toString() else this.toString() } ?: ""
-            val subtotalStr = if (t.subtotal % 1.0 == 0.0) t.subtotal.toLong().toString() else t.subtotal.toString()
+            val subtotalStr = if (runningSubtotal % 1.0 == 0.0) runningSubtotal.toLong().toString() else runningSubtotal.toString()
             sb.append("$itemNum,${t.date},${t.title},${t.category},$incomeStr,$expenseStr,$subtotalStr\n")
         }
         return sb.toString()
@@ -810,7 +838,13 @@ class GoogleDriveSyncManager(private val context: Context) {
             }
         }
 
-        val sortedList = rawList.sortedBy { it.date }
+        val sortedList = rawList.sortedWith(
+            compareBy(
+                { DateUtils.parseDateToComparable(it.date) },
+                { it.itemNo },
+                { it.id }
+            )
+        )
         var currentSubtotal = 0.0
         return sortedList.mapIndexed { index, t ->
             if (t.income != null) currentSubtotal += t.income
