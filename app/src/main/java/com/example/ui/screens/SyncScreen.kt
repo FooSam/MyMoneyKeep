@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
 import com.example.R
 import com.example.data.model.CustomCategory
 import com.example.ui.viewmodel.AppCurrency
@@ -35,13 +36,20 @@ import com.example.ui.viewmodel.AppStyleTheme
 import com.example.ui.viewmodel.BookkeepingViewModel
 import com.example.ui.theme.ColorExpense
 import com.example.ui.theme.ColorIncome
+import com.example.util.AdManager
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SyncScreen(viewModel: BookkeepingViewModel) {
     val context = LocalContext.current
+    val activity = context as? Activity
     val clipboardManager = LocalClipboardManager.current
+
+    LaunchedEffect(Unit) {
+        AdManager.loadInterstitialAd(context)
+    }
     val accountState by viewModel.googleAccountState.collectAsState()
     val allTransactions by viewModel.allTransactions.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
@@ -572,15 +580,25 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                     ) {
                                         Button(
                                             onClick = {
-                                                coroutineScope.launch {
-                                                    val success = viewModel.syncToGoogleDrive()
-                                                    val finalState = viewModel.googleAccountState.value
-                                                    if (success) {
-                                                        Toast.makeText(context, context.getString(R.string.sync_toast_synced, finalState.sheetTitle), Toast.LENGTH_LONG).show()
-                                                    } else {
-                                                        syncErrorDetail = finalState.lastSyncError.ifBlank { "Sync failed. Please check network connection." }
-                                                        showSyncErrorDialog = true
+                                                val syncTask = coroutineScope.async {
+                                                    viewModel.syncToGoogleDrive()
+                                                }
+                                                val onAdClosed: () -> Unit = {
+                                                    coroutineScope.launch {
+                                                        val success = syncTask.await()
+                                                        val finalState = viewModel.googleAccountState.value
+                                                        if (success) {
+                                                            Toast.makeText(context, context.getString(R.string.sync_toast_synced, finalState.sheetTitle), Toast.LENGTH_LONG).show()
+                                                        } else {
+                                                            syncErrorDetail = finalState.lastSyncError.ifBlank { "Sync failed. Please check network connection." }
+                                                            showSyncErrorDialog = true
+                                                        }
                                                     }
+                                                }
+                                                if (activity != null) {
+                                                    AdManager.showInterstitialAd(activity, onAdClosed)
+                                                } else {
+                                                    onAdClosed()
                                                 }
                                             },
                                             enabled = !accountState.isSyncing,
@@ -1054,13 +1072,23 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                 Button(
                     onClick = {
                         showRestoreConfirmDialog = false
-                        coroutineScope.launch {
-                            val success = viewModel.restoreFromGoogleDrive()
-                            if (success) {
-                                Toast.makeText(context, context.getString(R.string.sync_toast_restore_success), Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.sync_toast_restore_failed), Toast.LENGTH_LONG).show()
+                        val restoreTask = coroutineScope.async {
+                            viewModel.restoreFromGoogleDrive()
+                        }
+                        val onAdClosed: () -> Unit = {
+                            coroutineScope.launch {
+                                val success = restoreTask.await()
+                                if (success) {
+                                    Toast.makeText(context, context.getString(R.string.sync_toast_restore_success), Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, context.getString(R.string.sync_toast_restore_failed), Toast.LENGTH_LONG).show()
+                                }
                             }
+                        }
+                        if (activity != null) {
+                            AdManager.showInterstitialAd(activity, onAdClosed)
+                        } else {
+                            onAdClosed()
                         }
                     }
                 ) {

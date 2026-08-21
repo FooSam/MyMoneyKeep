@@ -45,8 +45,10 @@ playServicesAuth = "21.0.0"
 googleApiClient = "1.34.1"
 googleApiDrive = "v3-rev20220815-2.0.0"
 googleApiSheets = "v4-rev20220927-2.0.0"
+playServicesAds = "23.6.0"
 
 [libraries]
+play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

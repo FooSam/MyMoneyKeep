@@ -16,6 +16,8 @@ class MyApplication : Application() {
         setupCrashHandler()
         // 設定基礎遙測資訊
         com.example.util.CrashReporter.setCustomKey("app_package", packageName)
+        // 初始化 AdMob 廣告並背景預載插頁廣告
+        com.example.util.AdManager.init(this)
     }
 
     private fun setupCrashHandler() {

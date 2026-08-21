@@ -7,7 +7,7 @@
 ![Room](https://img.shields.io/badge/Room-Database-orange?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v1.00.00.42-brightgreen?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.00.00.43-brightgreen?style=flat-square)
 
 **一款以「本地優先、隱私安全、無伺服器、智能語音」為核心的現代化全方位記帳 Android 應用程式。**
 

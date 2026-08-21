@@ -268,6 +268,7 @@ dependencies {
   implementation(libs.google.api.client.android)
   implementation(libs.google.api.services.drive)
   implementation(libs.google.api.services.sheets)
+  implementation(libs.play.services.ads)
   // Firebase App Check 已移除：無 google-services.json，執行時初始化崩潰
   // implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.kotlinx.coroutines.android)
