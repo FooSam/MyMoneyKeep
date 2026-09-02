@@ -153,4 +153,96 @@ class GoogleDriveSyncManagerTest {
             assertEquals(i + 1, parsed[i].itemNo)
         }
     }
+
+    @Test
+    fun testDateUtilsParseYearMonth() {
+        assertEquals("2026.08", com.example.util.DateUtils.parseYearMonth("2026/8/1"))
+        assertEquals("2026.08", com.example.util.DateUtils.parseYearMonth("2026/08/10"))
+        assertEquals("2026.09", com.example.util.DateUtils.parseYearMonth("2026-9-2"))
+        assertEquals("2026.09", com.example.util.DateUtils.parseYearMonth("2026/09/30"))
+        assertEquals("2025.12", com.example.util.DateUtils.parseYearMonth("2025/12/31"))
+        assertEquals("2025.01", com.example.util.DateUtils.parseYearMonth("2025/1/5"))
+
+        // 測試 null 與無效日期 fallback
+        val currentYearMonth = java.text.SimpleDateFormat("yyyy.MM", java.util.Locale.getDefault()).format(java.util.Date())
+        assertEquals(currentYearMonth, com.example.util.DateUtils.parseYearMonth(null))
+        assertEquals(currentYearMonth, com.example.util.DateUtils.parseYearMonth("invalid"))
+    }
+
+    @Test
+    fun testMonthlyGroupingAndSubtotalCalculation() {
+        // 模擬跨 8 月與 9 月的多筆交易
+        val multiMonthTransactions = listOf(
+            TransactionEntity(itemNo = 1, date = "2026/8/5", title = "8月薪水", category = "A", income = 45000.0, expense = null, subtotal = 0.0, isSynced = false),
+            TransactionEntity(itemNo = 2, date = "2026/8/10", title = "買衣服", category = "C", income = null, expense = 2000.0, subtotal = 0.0, isSynced = false),
+            TransactionEntity(itemNo = 3, date = "2026/9/1", title = "9月薪水", category = "A", income = 45000.0, expense = null, subtotal = 0.0, isSynced = false),
+            TransactionEntity(itemNo = 4, date = "2026/9/2", title = "早午餐", category = "B", income = null, expense = 250.0, subtotal = 0.0, isSynced = false)
+        )
+
+        val monthGroups = multiMonthTransactions.groupBy { com.example.util.DateUtils.parseYearMonth(it.date) }.toSortedMap()
+        assertEquals(2, monthGroups.size)
+        assertTrue(monthGroups.containsKey("2026.08"))
+        assertTrue(monthGroups.containsKey("2026.09"))
+
+        // 驗證 2026.08 月份獨立小計
+        val augList = monthGroups["2026.08"]!!
+        assertEquals(2, augList.size)
+        var augSubtotal = 0.0
+        augList.forEach {
+            augSubtotal += (it.income ?: 0.0) - (it.expense ?: 0.0)
+        }
+        assertEquals(43000.0, augSubtotal, 0.001)
+
+        // 驗證 2026.09 月份獨立小計 (從 0 開始獨立累計，不疊加 8 月結餘)
+        val sepList = monthGroups["2026.09"]!!
+        assertEquals(2, sepList.size)
+        var sepSubtotal = 0.0
+        sepList.forEach {
+            sepSubtotal += (it.income ?: 0.0) - (it.expense ?: 0.0)
+        }
+        assertEquals(44750.0, sepSubtotal, 0.001)
+    }
+
+    @Test
+    fun testCrossMonthRestorationAndGlobalSorting() {
+        // 模擬從 8 月與 9 月兩個不同 Sheet 讀取的原始未排序交易
+        val rawRestoredList = listOf(
+            TransactionEntity(itemNo = 0, date = "2026/9/2", title = "早午餐", category = "B", income = null, expense = 250.0, subtotal = 0.0, isSynced = true),
+            TransactionEntity(itemNo = 0, date = "2026/8/5", title = "8月薪水", category = "A", income = 45000.0, expense = null, subtotal = 0.0, isSynced = true),
+            TransactionEntity(itemNo = 0, date = "2026/9/1", title = "9月薪水", category = "A", income = 45000.0, expense = null, subtotal = 0.0, isSynced = true),
+            TransactionEntity(itemNo = 0, date = "2026/8/10", title = "買衣服", category = "C", income = null, expense = 2000.0, subtotal = 0.0, isSynced = true)
+        )
+
+        // 執行還原排序與流水號/小計重新計算
+        val sortedList = rawRestoredList.sortedWith(
+            compareBy(
+                { com.example.util.DateUtils.parseDateToComparable(it.date) },
+                { it.itemNo },
+                { it.id }
+            )
+        )
+        var currentSubtotal = 0.0
+        val finalRestored = sortedList.mapIndexed { index, t ->
+            if (t.income != null) currentSubtotal += t.income
+            if (t.expense != null) currentSubtotal -= t.expense
+            t.copy(itemNo = index + 1, subtotal = currentSubtotal)
+        }
+
+        assertEquals(4, finalRestored.size)
+        assertEquals("2026/8/5", finalRestored[0].date)
+        assertEquals(1, finalRestored[0].itemNo)
+        assertEquals(45000.0, finalRestored[0].subtotal, 0.001)
+
+        assertEquals("2026/8/10", finalRestored[1].date)
+        assertEquals(2, finalRestored[1].itemNo)
+        assertEquals(43000.0, finalRestored[1].subtotal, 0.001)
+
+        assertEquals("2026/9/1", finalRestored[2].date)
+        assertEquals(3, finalRestored[2].itemNo)
+        assertEquals(88000.0, finalRestored[2].subtotal, 0.001)
+
+        assertEquals("2026/9/2", finalRestored[3].date)
+        assertEquals(4, finalRestored[3].itemNo)
+        assertEquals(87750.0, finalRestored[3].subtotal, 0.001)
+    }
 }

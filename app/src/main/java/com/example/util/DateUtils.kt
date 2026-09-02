@@ -34,4 +34,31 @@ object DateUtils {
             0L
         }
     }
+
+    /**
+     * 將各類常見日期字串解析為標準「YYYY.MM」月份字串（如 "2026.08"、"2026.09"）。
+     * 若字串無法解析，則以當前系統年月為預設值。
+     */
+    fun parseYearMonth(dateStr: String?): String {
+        if (dateStr.isNullOrBlank()) {
+            return java.text.SimpleDateFormat("yyyy.MM", java.util.Locale.getDefault()).format(java.util.Date())
+        }
+        return try {
+            val clean = dateStr.trim().replace("-", "/")
+            val parts = clean.split("/")
+            if (parts.size >= 2) {
+                val y = parts[0].trim().toIntOrNull() ?: 0
+                val m = parts[1].trim().toIntOrNull() ?: 0
+                if (y in 1900..2200 && m in 1..12) {
+                    String.format(java.util.Locale.US, "%04d.%02d", y, m)
+                } else {
+                    java.text.SimpleDateFormat("yyyy.MM", java.util.Locale.getDefault()).format(java.util.Date())
+                }
+            } else {
+                java.text.SimpleDateFormat("yyyy.MM", java.util.Locale.getDefault()).format(java.util.Date())
+            }
+        } catch (e: Exception) {
+            java.text.SimpleDateFormat("yyyy.MM", java.util.Locale.getDefault()).format(java.util.Date())
+        }
+    }
 }

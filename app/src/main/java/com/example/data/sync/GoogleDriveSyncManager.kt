@@ -322,67 +322,81 @@ class GoogleDriveSyncManager(private val context: Context) {
                 )
             )
 
-            // 雙層同步機制：優先使用 Google Sheets API 原生兩階段處理
-            currentStep = "步驟 3：試算表數據寫入與原生排版套版"
+            // 雙層同步機制：優先使用 Google Sheets API 原生多月份分頁排版處理
+            currentStep = "步驟 3：試算表數據寫入與按月分頁排版套版"
             var sheetsUpdateSuccess = false
             var sheetsErrorMsg = ""
             try {
+                // 1. 取得目前試算表所有分頁
                 val spreadsheet = sheetsService.spreadsheets().get(targetFileId).execute()
-                val sheetObj = spreadsheet.sheets?.firstOrNull()
-                val targetSheetId = sheetObj?.properties?.sheetId ?: 0
-                val targetSheetTitle = sheetObj?.properties?.title ?: "Sheet1"
-
-                // ==========================================
-                // 第 1 階段：寫入所有儲存格數據 (values.update)
-                // ==========================================
-                val valuesList = mutableListOf<List<Any>>()
-
-                // 第 1 列：主標題橫幅
-                valuesList.add(listOf("# MyMoneyKeep 雲端記帳本", "", "", "", "", "", ""))
-
-                // 第 2 列：欄位標頭
-                valuesList.add(listOf("項目", "日期", "標題", "類別", "收入", "支出", "小計"))
-
-                // 第 3 列起：資料列 (依日期順序累加計算小計)
-                var runningSubtotal = 0.0
-                sortedTransactions.forEachIndexed { index, t ->
-                    val inc = t.income ?: 0.0
-                    val exp = t.expense ?: 0.0
-                    runningSubtotal += (inc - exp)
-                    valuesList.add(
-                        listOf(
-                            index + 1,
-                            t.date,
-                            t.title,
-                            t.category,
-                            t.income?.takeIf { it > 0 } ?: "",
-                            t.expense?.takeIf { it > 0 } ?: "",
-                            runningSubtotal
-                        )
-                    )
+                val existingSheets = spreadsheet.sheets ?: emptyList()
+                val existingSheetMap = mutableMapOf<String, Int>()
+                existingSheets.forEach { s ->
+                    val t = s.properties?.title ?: ""
+                    val id = s.properties?.sheetId ?: 0
+                    if (t.isNotBlank()) existingSheetMap[t] = id
                 }
 
-                // 先清理舊資料範圍
-                try {
-                    sheetsService.spreadsheets().values().clear(
+                // 2. 將交易記錄按月份（YYYY.MM）分組，若無交易則以當前月份為預設分頁
+                val monthGroups: Map<String, List<TransactionEntity>> = if (sortedTransactions.isEmpty()) {
+                    mapOf(DateUtils.parseYearMonth(null) to emptyList())
+                } else {
+                    sortedTransactions.groupBy { DateUtils.parseYearMonth(it.date) }.toSortedMap()
+                }
+
+                // 3. 檢查並建立缺少的分頁 Sheet，若初始只有預設 Sheet1 / 工作表1 則將其重新命名
+                val addSheetRequests = mutableListOf<Request>()
+                var defaultSheetRenamed = false
+
+                monthGroups.keys.forEach { monthTitle ->
+                    if (!existingSheetMap.containsKey(monthTitle)) {
+                        // 檢查是否有未改名的初始單一 Sheet (如 Sheet1 或 工作表1)
+                        if (!defaultSheetRenamed && existingSheets.size == 1 && (existingSheets[0].properties?.title == "Sheet1" || existingSheets[0].properties?.title == "工作表1")) {
+                            val defaultSheetId = existingSheets[0].properties?.sheetId ?: 0
+                            addSheetRequests.add(
+                                Request().setUpdateSheetProperties(
+                                    UpdateSheetPropertiesRequest().apply {
+                                        properties = SheetProperties().apply {
+                                            sheetId = defaultSheetId
+                                            title = monthTitle
+                                        }
+                                        fields = "title"
+                                    }
+                                )
+                            )
+                            existingSheetMap[monthTitle] = defaultSheetId
+                            defaultSheetRenamed = true
+                        } else {
+                            addSheetRequests.add(
+                                Request().setAddSheet(
+                                    AddSheetRequest().apply {
+                                        properties = SheetProperties().apply {
+                                            title = monthTitle
+                                        }
+                                    }
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (addSheetRequests.isNotEmpty()) {
+                    sheetsService.spreadsheets().batchUpdate(
                         targetFileId,
-                        "'$targetSheetTitle'!A1:Z5000",
-                        ClearValuesRequest()
+                        BatchUpdateSpreadsheetRequest().setRequests(addSheetRequests)
                     ).execute()
-                } catch (ignored: Exception) {}
 
-                // 寫入儲存格數據
-                val valueBody = ValueRange().setValues(valuesList)
-                sheetsService.spreadsheets().values().update(targetFileId, "'$targetSheetTitle'!A1", valueBody)
-                    .setValueInputOption("USER_ENTERED")
-                    .execute()
+                    // 重新取得最新 sheetId 對照表
+                    val updatedSpreadsheet = sheetsService.spreadsheets().get(targetFileId).execute()
+                    existingSheetMap.clear()
+                    updatedSpreadsheet.sheets?.forEach { s ->
+                        val t = s.properties?.title ?: ""
+                        val id = s.properties?.sheetId ?: 0
+                        if (t.isNotBlank()) existingSheetMap[t] = id
+                    }
+                }
 
-                // ==========================================
-                // 第 2 階段：套用精確排版格式 (batchUpdate)
-                // ==========================================
-                val requests = mutableListOf<Request>()
-
-                // 建立類別顏色對照表
+                // 4. 準備類別色彩對照表
                 val effectiveCategories = customCategories.ifEmpty { CustomCategory.DEFAULT_CATEGORIES }
                 val categoryColorMap = mutableMapOf<String, Color>()
                 effectiveCategories.forEach { cat ->
@@ -391,230 +405,244 @@ class GoogleDriveSyncManager(private val context: Context) {
                     categoryColorMap[cat.name.uppercase()] = sheetsColor
                 }
                 val defaultTitleColor = Color().setRed(0.15f).setGreen(0.15f).setBlue(0.15f)
+                val headerBgColor = Color().setRed(0.925f).setGreen(0.937f).setBlue(0.945f) // 典雅淺灰 #ECEFF1
 
-                // (1) 合併第 1 列 A1:G1
-                requests.add(
-                    Request().setMergeCells(
-                        MergeCellsRequest().apply {
-                            range = GridRange().apply {
-                                sheetId = targetSheetId
-                                startRowIndex = 0
-                                endRowIndex = 1
-                                startColumnIndex = 0
-                                endColumnIndex = 7
-                            }
-                            mergeType = "MERGE_ALL"
-                        }
-                    )
-                )
+                val formattingRequests = mutableListOf<Request>()
 
-                // (2) 第 1 列橫幅格式 (置中、粗體 12pt)
-                requests.add(
-                    Request().setRepeatCell(
-                        RepeatCellRequest().apply {
-                            range = GridRange().apply {
-                                sheetId = targetSheetId
-                                startRowIndex = 0
-                                endRowIndex = 1
-                                startColumnIndex = 0
-                                endColumnIndex = 7
-                            }
-                            cell = CellData().apply {
-                                userEnteredFormat = CellFormat().apply {
-                                    horizontalAlignment = "CENTER"
-                                    verticalAlignment = "MIDDLE"
-                                    textFormat = TextFormat().apply {
-                                        bold = true
-                                        fontSize = 12
-                                    }
-                                }
-                            }
-                            fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)"
-                        }
-                    )
-                )
+                // 5. 逐月份工作表寫入數據與生成排版樣式
+                monthGroups.forEach { (monthTitle, monthTransList) ->
+                    val targetSheetId = existingSheetMap[monthTitle] ?: return@forEach
 
-                // (3) 第 2 列表頭格式 (置中、粗體 11pt)
-                requests.add(
-                    Request().setRepeatCell(
-                        RepeatCellRequest().apply {
-                            range = GridRange().apply {
-                                sheetId = targetSheetId
-                                startRowIndex = 1
-                                endRowIndex = 2
-                                startColumnIndex = 0
-                                endColumnIndex = 7
-                            }
-                            cell = CellData().apply {
-                                userEnteredFormat = CellFormat().apply {
-                                    horizontalAlignment = "CENTER"
-                                    verticalAlignment = "MIDDLE"
-                                    textFormat = TextFormat().apply {
-                                        bold = true
-                                        fontSize = 11
-                                    }
-                                }
-                            }
-                            fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)"
-                        }
-                    )
-                )
+                    // ==========================================
+                    // 第 1 階段：準備並寫入儲存格數據 (values.update)
+                    // ==========================================
+                    val valuesList = mutableListOf<List<Any>>()
 
-                if (sortedTransactions.isNotEmpty()) {
-                    val totalDataRows = sortedTransactions.size
+                    // 第 1 列：欄位標頭 (對齊範本格式)
+                    valuesList.add(listOf("項目", "日期", "標題", "類別", "收入", "支出", "小計"))
 
-                    // (4) A, B 欄 (項目、日期) 水平垂直置中
-                    requests.add(
+                    // 第 2 列起：資料列 (該月份內流水號從 1 起算，小計自 0 起累加)
+                    var runningSubtotal = 0.0
+                    monthTransList.forEachIndexed { index, t ->
+                        val inc = t.income ?: 0.0
+                        val exp = t.expense ?: 0.0
+                        runningSubtotal += (inc - exp)
+                        valuesList.add(
+                            listOf(
+                                index + 1,
+                                t.date,
+                                t.title,
+                                t.category,
+                                t.income?.takeIf { it > 0 } ?: "",
+                                t.expense?.takeIf { it > 0 } ?: "",
+                                runningSubtotal
+                            )
+                        )
+                    }
+
+                    // 先清理該月份舊資料範圍
+                    try {
+                        sheetsService.spreadsheets().values().clear(
+                            targetFileId,
+                            "'$monthTitle'!A1:Z5000",
+                            ClearValuesRequest()
+                        ).execute()
+                    } catch (ignored: Exception) {}
+
+                    // 寫入儲存格數據
+                    val valueBody = ValueRange().setValues(valuesList)
+                    sheetsService.spreadsheets().values().update(targetFileId, "'$monthTitle'!A1", valueBody)
+                        .setValueInputOption("USER_ENTERED")
+                        .execute()
+
+                    // ==========================================
+                    // 第 2 階段：生成精確排版格式請求 (batchUpdate)
+                    // ==========================================
+                    // (1) 第 1 列表頭格式 (置中、粗體 11pt、淺灰底色)
+                    formattingRequests.add(
                         Request().setRepeatCell(
                             RepeatCellRequest().apply {
                                 range = GridRange().apply {
                                     sheetId = targetSheetId
-                                    startRowIndex = 2
-                                    endRowIndex = 2 + totalDataRows
+                                    startRowIndex = 0
+                                    endRowIndex = 1
                                     startColumnIndex = 0
-                                    endColumnIndex = 2
+                                    endColumnIndex = 7
                                 }
                                 cell = CellData().apply {
                                     userEnteredFormat = CellFormat().apply {
                                         horizontalAlignment = "CENTER"
                                         verticalAlignment = "MIDDLE"
+                                        backgroundColor = headerBgColor
+                                        textFormat = TextFormat().apply {
+                                            bold = true
+                                            fontSize = 11
+                                        }
                                     }
                                 }
-                                fields = "userEnteredFormat(horizontalAlignment,verticalAlignment)"
+                                fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,backgroundColor,textFormat)"
                             }
                         )
                     )
 
-                    // (5) D 欄 (類別) 水平垂直置中
-                    requests.add(
-                        Request().setRepeatCell(
-                            RepeatCellRequest().apply {
-                                range = GridRange().apply {
-                                    sheetId = targetSheetId
-                                    startRowIndex = 2
-                                    endRowIndex = 2 + totalDataRows
-                                    startColumnIndex = 3
-                                    endColumnIndex = 4
-                                }
-                                cell = CellData().apply {
-                                    userEnteredFormat = CellFormat().apply {
-                                        horizontalAlignment = "CENTER"
-                                        verticalAlignment = "MIDDLE"
-                                    }
-                                }
-                                fields = "userEnteredFormat(horizontalAlignment,verticalAlignment)"
-                            }
-                        )
-                    )
+                    if (monthTransList.isNotEmpty()) {
+                        val totalDataRows = monthTransList.size
 
-                    // (6) C 欄 (標題) 水平垂直置中，並依自訂類別顏色動態著色
-                    sortedTransactions.forEachIndexed { idx, t ->
-                        val rowIndex = 2 + idx
-                        val catKey = t.category.trim().uppercase()
-                        val titleColor = categoryColorMap[catKey] ?: defaultTitleColor
-
-                        requests.add(
+                        // (2) A, B 欄 (項目、日期) 水平垂直置中
+                        formattingRequests.add(
                             Request().setRepeatCell(
                                 RepeatCellRequest().apply {
                                     range = GridRange().apply {
                                         sheetId = targetSheetId
-                                        startRowIndex = rowIndex
-                                        endRowIndex = rowIndex + 1
-                                        startColumnIndex = 2
-                                        endColumnIndex = 3
+                                        startRowIndex = 1
+                                        endRowIndex = 1 + totalDataRows
+                                        startColumnIndex = 0
+                                        endColumnIndex = 2
                                     }
                                     cell = CellData().apply {
                                         userEnteredFormat = CellFormat().apply {
                                             horizontalAlignment = "CENTER"
                                             verticalAlignment = "MIDDLE"
-                                            textFormat = TextFormat().apply {
-                                                bold = true
-                                                foregroundColor = titleColor
-                                            }
                                         }
                                     }
-                                    fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)"
+                                    fields = "userEnteredFormat(horizontalAlignment,verticalAlignment)"
+                                }
+                            )
+                        )
+
+                        // (3) D 欄 (類別) 水平垂直置中
+                        formattingRequests.add(
+                            Request().setRepeatCell(
+                                RepeatCellRequest().apply {
+                                    range = GridRange().apply {
+                                        sheetId = targetSheetId
+                                        startRowIndex = 1
+                                        endRowIndex = 1 + totalDataRows
+                                        startColumnIndex = 3
+                                        endColumnIndex = 4
+                                    }
+                                    cell = CellData().apply {
+                                        userEnteredFormat = CellFormat().apply {
+                                            horizontalAlignment = "CENTER"
+                                            verticalAlignment = "MIDDLE"
+                                        }
+                                    }
+                                    fields = "userEnteredFormat(horizontalAlignment,verticalAlignment)"
+                                }
+                            )
+                        )
+
+                        // (4) C 欄 (標題) 水平垂直置中，並依自訂類別顏色動態著色
+                        monthTransList.forEachIndexed { idx, t ->
+                            val rowIndex = 1 + idx
+                            val catKey = t.category.trim().uppercase()
+                            val titleColor = categoryColorMap[catKey] ?: defaultTitleColor
+
+                            formattingRequests.add(
+                                Request().setRepeatCell(
+                                    RepeatCellRequest().apply {
+                                        range = GridRange().apply {
+                                            sheetId = targetSheetId
+                                            startRowIndex = rowIndex
+                                            endRowIndex = rowIndex + 1
+                                            startColumnIndex = 2
+                                            endColumnIndex = 3
+                                        }
+                                        cell = CellData().apply {
+                                            userEnteredFormat = CellFormat().apply {
+                                                horizontalAlignment = "CENTER"
+                                                verticalAlignment = "MIDDLE"
+                                                textFormat = TextFormat().apply {
+                                                    bold = true
+                                                    foregroundColor = titleColor
+                                                }
+                                            }
+                                        }
+                                        fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)"
+                                    }
+                                )
+                            )
+                        }
+
+                        // (5) E, F, G 欄 (收入、支出、小計) 靠右對齊，並套用千分位數字格式
+                        formattingRequests.add(
+                            Request().setRepeatCell(
+                                RepeatCellRequest().apply {
+                                    range = GridRange().apply {
+                                        sheetId = targetSheetId
+                                        startRowIndex = 1
+                                        endRowIndex = 1 + totalDataRows
+                                        startColumnIndex = 4
+                                        endColumnIndex = 7
+                                    }
+                                    cell = CellData().apply {
+                                        userEnteredFormat = CellFormat().apply {
+                                            horizontalAlignment = "RIGHT"
+                                            verticalAlignment = "MIDDLE"
+                                            numberFormat = NumberFormat().setType("NUMBER").setPattern("#,##0")
+                                        }
+                                    }
+                                    fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,numberFormat)"
                                 }
                             )
                         )
                     }
 
-                    // (7) E, F, G 欄 (收入、支出、小計) 靠右對齊，並套用千分位數字格式
-                    requests.add(
-                        Request().setRepeatCell(
-                            RepeatCellRequest().apply {
+                    // (6) 設定欄寬 (完全對齊範本比例)
+                    val columnWidths = listOf(60, 110, 180, 80, 100, 100, 110)
+                    columnWidths.forEachIndexed { colIdx, width ->
+                        formattingRequests.add(
+                            Request().setUpdateDimensionProperties(
+                                UpdateDimensionPropertiesRequest().apply {
+                                    range = DimensionRange().apply {
+                                        sheetId = targetSheetId
+                                        dimension = "COLUMNS"
+                                        startIndex = colIdx
+                                        endIndex = colIdx + 1
+                                    }
+                                    properties = DimensionProperties().apply {
+                                        pixelSize = width
+                                    }
+                                    fields = "pixelSize"
+                                }
+                            )
+                        )
+                    }
+
+                    // (7) 表格全區間淡灰邊框
+                    val borderStyle = Border().apply {
+                        style = "SOLID"
+                        color = Color().setRed(0.85f).setGreen(0.87f).setBlue(0.90f)
+                    }
+                    val totalRowCount = maxOf(1, 1 + monthTransList.size)
+                    formattingRequests.add(
+                        Request().setUpdateBorders(
+                            UpdateBordersRequest().apply {
                                 range = GridRange().apply {
                                     sheetId = targetSheetId
-                                    startRowIndex = 2
-                                    endRowIndex = 2 + totalDataRows
-                                    startColumnIndex = 4
+                                    startRowIndex = 0
+                                    endRowIndex = totalRowCount
+                                    startColumnIndex = 0
                                     endColumnIndex = 7
                                 }
-                                cell = CellData().apply {
-                                    userEnteredFormat = CellFormat().apply {
-                                        horizontalAlignment = "RIGHT"
-                                        verticalAlignment = "MIDDLE"
-                                        numberFormat = NumberFormat().setType("NUMBER").setPattern("#,##0")
-                                    }
-                                }
-                                fields = "userEnteredFormat(horizontalAlignment,verticalAlignment,numberFormat)"
+                                top = borderStyle
+                                bottom = borderStyle
+                                left = borderStyle
+                                right = borderStyle
+                                innerHorizontal = borderStyle
+                                innerVertical = borderStyle
                             }
                         )
                     )
                 }
 
-                // (8) 設定欄寬 (完全對齊附圖 2 寬度比例)
-                val columnWidths = listOf(60, 110, 180, 80, 100, 100, 110)
-                columnWidths.forEachIndexed { colIdx, width ->
-                    requests.add(
-                        Request().setUpdateDimensionProperties(
-                            UpdateDimensionPropertiesRequest().apply {
-                                range = DimensionRange().apply {
-                                    sheetId = targetSheetId
-                                    dimension = "COLUMNS"
-                                    startIndex = colIdx
-                                    endIndex = colIdx + 1
-                                }
-                                properties = DimensionProperties().apply {
-                                    pixelSize = width
-                                }
-                                fields = "pixelSize"
-                            }
-                        )
-                    )
+                // 6. 批次發送所有分頁排版請求
+                if (formattingRequests.isNotEmpty()) {
+                    sheetsService.spreadsheets().batchUpdate(
+                        targetFileId,
+                        BatchUpdateSpreadsheetRequest().setRequests(formattingRequests)
+                    ).execute()
                 }
-
-                // (9) 表格全區間淡灰邊框
-                val borderStyle = Border().apply {
-                    style = "SOLID"
-                    color = Color().setRed(0.85f).setGreen(0.87f).setBlue(0.90f)
-                }
-                val totalRowCount = maxOf(2, 2 + sortedTransactions.size)
-                requests.add(
-                    Request().setUpdateBorders(
-                        UpdateBordersRequest().apply {
-                            range = GridRange().apply {
-                                sheetId = targetSheetId
-                                startRowIndex = 0
-                                endRowIndex = totalRowCount
-                                startColumnIndex = 0
-                                endColumnIndex = 7
-                            }
-                            top = borderStyle
-                            bottom = borderStyle
-                            left = borderStyle
-                            right = borderStyle
-                            innerHorizontal = borderStyle
-                            innerVertical = borderStyle
-                        }
-                    )
-                )
-
-                // 執行格式化批次處理
-                sheetsService.spreadsheets().batchUpdate(
-                    targetFileId,
-                    BatchUpdateSpreadsheetRequest().setRequests(requests)
-                ).execute()
 
                 sheetsUpdateSuccess = true
             } catch (sheetsEx: Exception) {
@@ -661,7 +689,7 @@ class GoogleDriveSyncManager(private val context: Context) {
     }
 
     // ---------------------------------------------------------
-    // 從 Google Drive 原生試算表下載資料並還原至本機 (無損雲端格式)
+    // 從 Google Drive 原生試算表下載資料並還原至本機 (遍歷所有月份分頁 Sheet)
     // ---------------------------------------------------------
 
     suspend fun restoreFromDrive(): List<TransactionEntity>? = withContext(Dispatchers.IO) {
@@ -705,38 +733,51 @@ class GoogleDriveSyncManager(private val context: Context) {
 
             val existingFileId = fileList.files?.firstOrNull()?.id ?: return@withContext null
 
-            // 優先透過 Sheets API 讀取儲存格 Values (A3:G)
+            // 優先透過 Sheets API 遍歷所有月份分頁讀取儲存格 Values (A2:G)
             return@withContext try {
                 val spreadsheet = sheetsService.spreadsheets().get(existingFileId).execute()
-                val targetSheetTitle = spreadsheet.sheets?.firstOrNull()?.properties?.title ?: "Sheet1"
-                val response = sheetsService.spreadsheets().values().get(existingFileId, "'$targetSheetTitle'!A3:G").execute()
-                val rows = response.getValues()
-                if (rows != null && rows.isNotEmpty()) {
-                    val rawList = mutableListOf<TransactionEntity>()
-                    for (row in rows) {
-                        if (row.size >= 3) {
-                            val date = row.getOrNull(1)?.toString()?.trim() ?: ""
-                            val title = row.getOrNull(2)?.toString()?.trim() ?: ""
-                            val category = row.getOrNull(3)?.toString()?.trim() ?: "C"
-                            val incomeClean = row.getOrNull(4)?.toString()?.replace("$", "")?.replace("NT", "")?.replace(",", "")?.toDoubleOrNull()
-                            val expenseClean = row.getOrNull(5)?.toString()?.replace("$", "")?.replace("NT", "")?.replace(",", "")?.toDoubleOrNull()
+                val sheets = spreadsheet.sheets ?: emptyList()
+                val rawList = mutableListOf<TransactionEntity>()
 
-                            if (date.isNotBlank() && title.isNotBlank()) {
-                                rawList.add(
-                                    TransactionEntity(
-                                        itemNo = 0,
-                                        date = date,
-                                        title = title,
-                                        category = category,
-                                        income = incomeClean,
-                                        expense = expenseClean,
-                                        subtotal = 0.0,
-                                        isSynced = true
+                for (sheet in sheets) {
+                    val targetSheetTitle = sheet.properties?.title ?: continue
+                    val response = sheetsService.spreadsheets().values().get(existingFileId, "'$targetSheetTitle'!A2:G").execute()
+                    val rows = response.getValues()
+                    if (rows != null && rows.isNotEmpty()) {
+                        for (row in rows) {
+                            if (row.size >= 3) {
+                                val itemStr = row.getOrNull(0)?.toString()?.trim() ?: ""
+                                val date = row.getOrNull(1)?.toString()?.trim() ?: ""
+                                val title = row.getOrNull(2)?.toString()?.trim() ?: ""
+                                val category = row.getOrNull(3)?.toString()?.trim() ?: "C"
+                                val incomeClean = row.getOrNull(4)?.toString()?.replace("$", "")?.replace("NT", "")?.replace(",", "")?.toDoubleOrNull()
+                                val expenseClean = row.getOrNull(5)?.toString()?.replace("$", "")?.replace("NT", "")?.replace(",", "")?.toDoubleOrNull()
+
+                                // 過濾標頭列或非資料列
+                                if (itemStr.contains("項目") || itemStr.contains("Item") || date.contains("日期") || date.contains("Date")) {
+                                    continue
+                                }
+
+                                if (date.isNotBlank() && title.isNotBlank()) {
+                                    rawList.add(
+                                        TransactionEntity(
+                                            itemNo = 0,
+                                            date = date,
+                                            title = title,
+                                            category = category,
+                                            income = incomeClean,
+                                            expense = expenseClean,
+                                            subtotal = 0.0,
+                                            isSynced = true
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
+                }
+
+                if (rawList.isNotEmpty()) {
                     val sortedList = rawList.sortedWith(
                         compareBy(
                             { DateUtils.parseDateToComparable(it.date) },
