@@ -8,13 +8,15 @@ import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import com.example.util.EdgeToEdgeHelper
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -70,7 +72,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        EdgeToEdgeHelper.applyEdgeToEdge(this)
 
         val incomingAction = intent?.action
 
@@ -79,6 +81,12 @@ class MainActivity : ComponentActivity() {
             val currentLanguage by viewModel.selectedLanguage.collectAsState()
             val styleTheme by viewModel.selectedStyleTheme.collectAsState()
             val loginMode by viewModel.loginMode.collectAsState()
+
+            val isDarkTheme = styleTheme == com.example.ui.viewmodel.AppStyleTheme.DARK ||
+                styleTheme == com.example.ui.viewmodel.AppStyleTheme.MECHANICAL
+            SideEffect {
+                EdgeToEdgeHelper.updateSystemBarsTheme(this@MainActivity, isDarkTheme)
+            }
 
             val localizedContext = remember(currentLanguage) {
                 LocaleHelper.applyLocale(baseContext, currentLanguage.code)
@@ -217,6 +225,7 @@ class MainActivity : ComponentActivity() {
 
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
+                            contentWindowInsets = WindowInsets.safeDrawing,
                             bottomBar = {
                                 NavigationBar {
                                     NavigationTab.entries.forEach { tab ->
