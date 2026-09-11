@@ -7,7 +7,7 @@
 ![Room](https://img.shields.io/badge/Room-Database-orange?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v1.00.00.43-brightgreen?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.00.00.45-brightgreen?style=flat-square)
 
 **一款以「本地優先、隱私安全、無伺服器、智能語音」為核心的現代化全方位記帳 Android 應用程式。**
 
@@ -41,12 +41,13 @@
   - **【🎙️ 語音記帳】**：點擊直達 App 首頁開始記帳。
   - **【🔄 重新整理】**：右上角放大點擊區，隨時一鍵更新最新桌面數據。
 
-### 5. ☁️ Google Drive 個人雲端試算表自動同步
+### 5. ☁️ Google Drive 個人雲端試算表自動同步與無損還原
 - **零中轉私有雲端架構**：採用 Android 原生 OAuth 安全授權，直連使用者個人的 Google 雲端硬碟，零第三方伺服器中轉。
-- **年度自動分表與美化排版**：
+- **年度自動分表與按月分頁 Sheet (YYYY.MM)**：
   - 自動於雲端建立『MyMoneyKeep_雲端記帳本』專屬資料夾，並依年份建立獨立 Google 試算表（如『2026_MyMoneyKeep_記帳本』）。
-  - 同步時自動套用整齊排版與自訂類別顏色標記，點開試算表一目了然。
-  - 支援隨時 **「從雲端還原」**，換機或重裝無損下載歷史數據。
+  - 精準對齊標準記帳範本格式，交易記錄按月份自動分組建立獨立分頁 Sheet（如 `2026.08`, `2026.09`），自動套用 Row 1 標頭與 Row 2+ 資料美化排版（月內流水號、月內累計小計、自訂類別動態著色、千分位靠右對齊與淡灰網格邊框）。
+- **多分頁全量無損還原**：
+  - 支援一鍵 **「從雲端還原」**，自動遍歷試算表內全部月份 Sheet 抓取數據，全局依真實交易日期重新排序、項次與累計小計重算後完整還原至本機 Room 資料庫。
 
 ### 6. 🌐 全介面 5 大多國語系即時切換
 - 支援 **繁體中文 (zh-TW)**、**簡體中文 (zh-CN)**、**英文 (English)**、**日文 (日本語)**、**韓文 (한국어)** 5 種語言即時切換，所有畫面、按鈕、彈窗與 Widget 全面本地化。
@@ -60,6 +61,11 @@
 ### 9. 🛡️ 企業級安全性與除錯診斷
 - **Firebase Crashlytics 遙測**：全域未處理例外捕捉，Release 自動上傳 R8 mapping 檔。
 - **開發者真機 SHA-1 診斷**：點擊版本資訊 6 次可開啟登入診斷工具，一鍵複製真機運行 SHA-1 憑證與 GCP OAuth 排查報告。
+
+### 10. 📱 Android 15+ 現代化全無邊框 (Edge-to-Edge) 與安全插邊適配
+- **全版本無邊框相容**：採用現代化 `WindowCompat` 規範，完美適配 Android 15 (SDK 35+) 強制無邊框標準，徹底杜絕已淘汰之 `SHORT_EDGES` Cutout 參數，原生指定官方標準 `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`。
+- **全畫面安全插邊防護**：主畫面、迎賓登入頁面與全局崩潰日誌視窗 (`CrashDisplayActivity`) 全面導入動態 WindowInsets（狀態列、導航列與螢幕挖孔）監聽與 `safeDrawingPadding`，確保各式裝置螢幕與相機鏡頭挖孔下零元件遮擋。
+- **動態多主題系統列顏色適配**：自動隨 7 大風格主題即時切換狀態列與導航列圖示之明暗對比，維持視覺極致沉浸。
 
 ---
 
