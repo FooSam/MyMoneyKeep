@@ -2,13 +2,16 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -85,17 +88,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
 
     LaunchedEffect(Unit) {
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            val recognizer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
-            ) {
-                try {
-                    SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-                } catch (e: Exception) {
-                    SpeechRecognizer.createSpeechRecognizer(context)
-                }
-            } else {
-                SpeechRecognizer.createSpeechRecognizer(context)
-            }
+            val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
 
             recognizer.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
@@ -108,6 +101,7 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                     viewModel.setListening(false)
                 }
                 override fun onError(error: Int) {
+                    Log.w("HomeScreen", "SpeechRecognizer onError code: $error")
                     viewModel.setListening(false)
                 }
                 override fun onResults(results: Bundle?) {
@@ -303,10 +297,36 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                                         )
                                     }
                                 )
-                                .pointerInput(Unit) {
+                                .pointerInput(isListening) {
                                     detectTapGestures(
                                         onPress = {
-                                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                            val hasPerm = ContextCompat.checkSelfPermission(
+                                                context,
+                                                Manifest.permission.RECORD_AUDIO
+                                            ) == PackageManager.PERMISSION_GRANTED
+
+                                            if (!hasPerm) {
+                                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                                return@detectTapGestures
+                                            }
+
+                                            if (isListening) {
+                                                // 若目前正在錄音，點擊麥克風主動停止錄音並完成辨識
+                                                stopListening(speechRecognizer, viewModel)
+                                                return@detectTapGestures
+                                            }
+
+                                            // 尚未錄音：立即啟動錄音
+                                            startListening(context, speechRecognizer, viewModel, selectedLanguage.code)
+
+                                            val pressStartTime = System.currentTimeMillis()
+                                            val released = tryAwaitRelease()
+                                            val pressDuration = System.currentTimeMillis() - pressStartTime
+
+                                            // 若長按超過 500ms 且放開手指，自動停止錄音並提交；若為短按點擊，放開後繼續由語音辨識器自然聆聽
+                                            if (released && pressDuration > 500) {
+                                                stopListening(speechRecognizer, viewModel)
+                                            }
                                         }
                                     )
                                 }
@@ -366,14 +386,25 @@ private fun startListening(
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, langCode)
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-        }
     }
     try {
         viewModel.setListening(true)
         recognizer.startListening(intent)
     } catch (e: Exception) {
+        Log.e("HomeScreen", "SpeechRecognizer startListening failed", e)
+        viewModel.setListening(false)
+    }
+}
+
+private fun stopListening(
+    recognizer: SpeechRecognizer?,
+    viewModel: BookkeepingViewModel
+) {
+    try {
+        recognizer?.stopListening()
+    } catch (e: Exception) {
+        Log.e("HomeScreen", "SpeechRecognizer stopListening failed", e)
+    } finally {
         viewModel.setListening(false)
     }
 }

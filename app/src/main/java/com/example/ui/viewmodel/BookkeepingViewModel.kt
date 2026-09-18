@@ -652,22 +652,123 @@ class BookkeepingViewModel(application: Application) : AndroidViewModel(applicat
                     val result = parser.parseUserInput(text, customApiKey = customKey, language = currentLang)
 
                     if (result.isValid) {
-                        // Add transaction to DB
-                        repository.insertTransaction(
-                            date = result.date,
-                            title = result.title,
-                            category = result.category,
-                            income = result.income,
-                            expense = result.expense
-                        )
-                        notifyWidgetUpdate()
+                        val isModify = result.isUpdate || parser.isModifyIntent(text)
+                        if (isModify) {
+                            val txList = allTransactions.value
+                            // 尋找目標修改紀錄：
+                            // 1. 若指名品項標題（如「午餐」）：
+                            //    優先尋找同日期、標題包含或相符「午餐」的最新紀錄
+                            //    若無則尋找全歷史中標題相符的最新紀錄
+                            // 2. 若未指名品項標題（如「改100」）：
+                            //    優先取上一筆記錄 (_lastAddedTransaction.value)，若無則取最新一筆
+                            val targetTx = if (result.title.isNotBlank()) {
+                                txList.filter { it.date == result.date && (it.title.contains(result.title, ignoreCase = true) || result.title.contains(it.title, ignoreCase = true)) }.lastOrNull()
+                                    ?: txList.filter { it.title.contains(result.title, ignoreCase = true) || result.title.contains(it.title, ignoreCase = true) }.lastOrNull()
+                                    ?: _lastAddedTransaction.value
+                            } else {
+                                _lastAddedTransaction.value ?: txList.lastOrNull()
+                            }
 
-                        val aiMsg = ChatMessage(
-                            sender = "AI",
-                            text = result.aiResponse,
-                            parsedTransaction = result
-                        )
-                        _chatMessages.value = _chatMessages.value + aiMsg
+                            if (targetTx != null) {
+                                val updatedTx = targetTx.copy(
+                                    income = if (result.income != null && result.income > 0) result.income else if (targetTx.income != null && (result.expense == null || result.expense <= 0)) targetTx.income else null,
+                                    expense = if (result.expense != null && result.expense > 0) result.expense else if (targetTx.expense != null && (result.income == null || result.income <= 0)) targetTx.expense else null,
+                                    category = if (result.category.isNotBlank()) result.category else targetTx.category
+                                )
+                                repository.updateTransaction(updatedTx)
+                                _lastAddedTransaction.value = updatedTx
+                                notifyWidgetUpdate()
+
+                                val updatedAmountStr = if (updatedTx.income != null && updatedTx.income > 0) {
+                                    "+$${updatedTx.income.toInt()}"
+                                } else {
+                                    "-$${(updatedTx.expense ?: 0.0).toInt()}"
+                                }
+
+                                val summaryMsg = if (result.aiResponse.contains("修改") || result.aiResponse.contains("更正")) {
+                                    result.aiResponse
+                                } else {
+                                    "已將 ${targetTx.date}【${targetTx.title}】金額修改為 $updatedAmountStr。"
+                                }
+
+                                val parsedForUi = result.copy(
+                                    date = updatedTx.date,
+                                    title = updatedTx.title,
+                                    category = updatedTx.category,
+                                    income = updatedTx.income,
+                                    expense = updatedTx.expense,
+                                    aiResponse = summaryMsg,
+                                    isUpdate = true
+                                )
+
+                                val aiMsg = ChatMessage(
+                                    sender = "AI",
+                                    text = summaryMsg,
+                                    parsedTransaction = parsedForUi
+                                )
+                                _chatMessages.value = _chatMessages.value + aiMsg
+                            } else {
+                                // 查無符合的歷史紀錄可供修改，作為新紀錄新增
+                                val newId = repository.insertTransaction(
+                                    date = result.date,
+                                    title = result.title.ifBlank { "一般記帳" },
+                                    category = result.category,
+                                    income = result.income,
+                                    expense = result.expense
+                                )
+                                notifyWidgetUpdate()
+
+                                val createdTx = TransactionEntity(
+                                    id = newId,
+                                    itemNo = 0,
+                                    date = result.date,
+                                    title = result.title.ifBlank { "一般記帳" },
+                                    category = result.category,
+                                    income = result.income,
+                                    expense = result.expense,
+                                    subtotal = 0.0,
+                                    isSynced = false
+                                )
+                                _lastAddedTransaction.value = createdTx
+
+                                val aiMsg = ChatMessage(
+                                    sender = "AI",
+                                    text = "未找到可修改的歷史紀錄，已為您自動新增：${result.aiResponse}",
+                                    parsedTransaction = result
+                                )
+                                _chatMessages.value = _chatMessages.value + aiMsg
+                            }
+                        } else {
+                            // 正常新增新交易
+                            val newId = repository.insertTransaction(
+                                date = result.date,
+                                title = result.title,
+                                category = result.category,
+                                income = result.income,
+                                expense = result.expense
+                            )
+                            notifyWidgetUpdate()
+
+                            val createdTx = TransactionEntity(
+                                id = newId,
+                                itemNo = 0,
+                                date = result.date,
+                                title = result.title,
+                                category = result.category,
+                                income = result.income,
+                                expense = result.expense,
+                                subtotal = 0.0,
+                                isSynced = false
+                            )
+                            _lastAddedTransaction.value = createdTx
+
+                            val aiMsg = ChatMessage(
+                                sender = "AI",
+                                text = result.aiResponse,
+                                parsedTransaction = result
+                            )
+                            _chatMessages.value = _chatMessages.value + aiMsg
+                        }
                     } else {
                         // Invalid input: DO NOT add to DB! Pop up warning alert
                         val warningText = result.warningMessage ?: result.aiResponse

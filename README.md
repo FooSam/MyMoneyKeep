@@ -7,7 +7,7 @@
 ![Room](https://img.shields.io/badge/Room-Database-orange?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%2024%2B-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v1.00.00.46-brightgreen?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.00.00.49-brightgreen?style=flat-square)
 
 **一款以「本地優先、隱私安全、無伺服器、智能語音」為核心的現代化全方位記帳 Android 應用程式。**
 
@@ -18,7 +18,8 @@
 ## 🌟 核心特色 (Core Features)
 
 ### 1. 🎙️ 智慧語音記帳與三軌智能調度
-- **自然語言秒級辨識與地端神經網路語音**：支援語音或文字自然語言輸入（例如：「午餐 120」、「昨天加 95 無鉛汽油 800 元」），自動精準拆解品項、金額、交易類別與日期。Android 12+ 至 Android 16 優先調用原生地端神經網路語音識別 (`OnDeviceSpeechRecognizer`) 達成零網路延遲與離線隱私保護，並支援即時發話串流文字反饋 (`onPartialResults`)。
+- **自然語言秒級辨識與雙模流暢操作**：支援語音或文字自然語言輸入（例如：「午餐 120」、「昨天加 95 無鉛汽油 800 元」），自動精準拆解品項、金額、交易類別與日期。大麥克風支援「點擊錄音/點擊停止完成」與「長按說話放開即送出」雙模智慧手勢，並支援即時發話串流文字反饋 (`onPartialResults`)。
+- **智慧上下文語音金額修改 (Context-Aware Voice Update)**：支援自然語言即時更正（例如說出「午餐改100」、「今天的午餐改100」或「改100」），AI 自動依品項上下文與記憶體快取定位最近紀錄，直接更新金額並重新計算流水號小計，無縫銜接記帳修訂。
 - **三軌智慧調度引擎**：
   - **第一軌：雲端 Gemini 3.8 Flash 多代階梯降級備援隊列**（優先採用最新旗艦 Gemini 3.8 Flash，遇異常自動依序平滑階梯備退 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 -> 2.5，配備 minimal 零延遲思考控制，支援 BYOK 自帶金鑰，提供極速且長遠無虞的深度記帳解析與對話顧問）。
   - **第二軌：地端 Edge AI / Gemini Nano**（適配 Android AICore 離線神經網路加速）。
@@ -79,7 +80,7 @@
   - Google Play Services Auth (原生 Android OAuth 登入)
   - Google Drive REST API v3 / Google Sheets API v4
   - Google Gemini 3.8 Flash REST API (3.8 至 2.5 多代階梯備援, BYOK)
-  - Android SpeechRecognizer (OnDeviceSpeechRecognizer 雙軌語音辨識)
+  - Android SpeechRecognizer (高可用語音識別、即時串流文字反饋與雙模手勢操作)
   - ExchangeRate-API / Frankfurter API (外幣即時匯率)
   - Retrofit 2, Moshi, OkHttp 3
 - **語系與本地化**：LocaleHelper (Context Wrapper 多國語系動態切換)

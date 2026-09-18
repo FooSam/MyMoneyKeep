@@ -131,4 +131,36 @@ class GeminiBookkeepingParserTest {
         assertTrue(models.contains("gemini-3.0-flash"))
         assertEquals(7, models.size)
     }
+
+    @Test
+    fun testModifyIntentParsing() {
+        // 1. 意圖檢測
+        assertTrue(parser.isModifyIntent("午餐改100"))
+        assertTrue(parser.isModifyIntent("今天的午餐改100"))
+        assertTrue(parser.isModifyIntent("改100"))
+        assertTrue(parser.isModifyIntent("剛剛的晚餐更正為250"))
+        org.junit.Assert.assertFalse(parser.isModifyIntent("午餐95"))
+        org.junit.Assert.assertFalse(parser.isModifyIntent("早餐 60 元"))
+
+        // 2. 本地解析「午餐改100」
+        val res1 = parser.parseLocalNlp("午餐改100", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res1.isValid)
+        assertTrue(res1.isUpdate)
+        assertEquals("午餐", res1.title)
+        assertEquals(100.0, res1.expense ?: 0.0, 0.001)
+
+        // 3. 本地解析「今天的午餐改100」
+        val res2 = parser.parseLocalNlp("今天的午餐改100", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res2.isValid)
+        assertTrue(res2.isUpdate)
+        assertEquals("午餐", res2.title)
+        assertEquals(100.0, res2.expense ?: 0.0, 0.001)
+
+        // 4. 本地解析「改100」（無指定品項，修改上一筆）
+        val res3 = parser.parseLocalNlp("改100", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res3.isValid)
+        assertTrue(res3.isUpdate)
+        assertEquals("", res3.title)
+        assertEquals(100.0, res3.expense ?: 0.0, 0.001)
+    }
 }

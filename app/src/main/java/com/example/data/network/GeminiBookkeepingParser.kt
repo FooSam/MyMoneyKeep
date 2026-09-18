@@ -32,7 +32,8 @@ data class ParsedTransaction(
     val aiResponse: String,
     val isValid: Boolean = true,
     val warningMessage: String? = null,
-    val engineType: ParserEngineType = ParserEngineType.LOCAL_NLP
+    val engineType: ParserEngineType = ParserEngineType.LOCAL_NLP,
+    val isUpdate: Boolean = false
 )
 
 object ValidationStrings {
@@ -191,6 +192,13 @@ class GeminiBookkeepingParser {
                 4. income: 收入金額 (純數值，若為支出則填 null)
                 5. expense: 支出金額 (純數值，若為收入則填 null)
                 6. summary: 簡短回覆語句 (${language.displayName})
+                7. isUpdate (是否為修改金額/更新現有紀錄，布林值 true/false)：
+                   - 若使用者表達「修改」、「改」、「更正」金額或內容（例如：「午餐改100」、「改100」、「今天午餐更正為100」、「剛剛的晚餐改成200」），請將 isUpdate 設為 true！
+                   - ⚠️【修改規則】：
+                     - 若提及品項名稱（如「午餐改100」），title 必須填入該純淨品項名稱（如「午餐」）。
+                     - 若未提及品項名稱（如「改100」、「更正為100」），title 填空字串 ""。
+                     - expense/income 填入修改後的新金額數值。
+                     - summary 輸出修改說明（例如：「已將午餐金額修改為 100 元」）。
             """.trimIndent()
 
             for (model in CANDIDATE_MODELS) {
@@ -306,8 +314,25 @@ class GeminiBookkeepingParser {
         parseLocalNlp(inputText, hasApiKey = apiKey.isNotBlank(), language = language, apiErrorMessage = apiErrorMessage)
     }
 
+    fun isModifyIntent(text: String): Boolean {
+        val t = text.trim()
+        val modifyKeywords = listOf("改成", "修改為", "修改成", "更正為", "換成", "調成", "改為", "改成了", "改")
+        return modifyKeywords.any { t.contains(it) }
+    }
+
     private fun cleanTitleStopWords(input: String): String {
         var clean = input
+            .replace("修改為", "")
+            .replace("修改成", "")
+            .replace("更正為", "")
+            .replace("改成了", "")
+            .replace("改成", "")
+            .replace("換成", "")
+            .replace("調成", "")
+            .replace("改為", "")
+            .replace("修改", "")
+            .replace("更正", "")
+            .replace("改", "")
             .replace("今天", "")
             .replace("明天", "")
             .replace("昨天", "")
@@ -481,8 +506,10 @@ class GeminiBookkeepingParser {
             )
         }
 
-        // 檢查 2: 標題是否存在
-        if (title.isBlank()) {
+        val isUpdate = isModifyIntent(input)
+
+        // 檢查 2: 標題是否存在 (若為修改意圖且標題為空，代表修改上一筆，仍屬有效)
+        if (title.isBlank() && !isUpdate) {
             val warning = ValidationStrings.getMissingTitleWarning(language) + (if (apiErrorMessage != null) "\n(API連線失敗: $apiErrorMessage)" else "")
             return ParsedTransaction(
                 date = dateStr,
@@ -493,7 +520,8 @@ class GeminiBookkeepingParser {
                 aiResponse = warning,
                 isValid = false,
                 warningMessage = warning,
-                engineType = ParserEngineType.LOCAL_NLP
+                engineType = ParserEngineType.LOCAL_NLP,
+                isUpdate = false
             )
         }
 
@@ -503,18 +531,22 @@ class GeminiBookkeepingParser {
                 input.contains("紅包") || input.contains("利息") || input.contains("股息") ||
                 input.contains("income", ignoreCase = true)
 
-        val categoryCode = inferCategorySmartly(title, isIncome)
+        val categoryCode = inferCategorySmartly(title.ifBlank { "一般支出" }, isIncome)
         val incomeVal = if (isIncome) amount else null
         val expenseVal = if (!isIncome) amount else null
 
-        val responseMsg = ValidationStrings.getSuccessResponse(
-            lang = language,
-            dateStr = dateStr,
-            title = title,
-            amount = amount,
-            categoryCode = categoryCode,
-            isIncome = isIncome
-        ) + (if (apiErrorMessage != null) "\n(⚠️ 雲端API連線失敗，已自動降級離線模式: $apiErrorMessage)" else "")
+        val responseMsg = if (isUpdate) {
+            "已將【${title.ifBlank { "記帳" }}】金額修改為 ${amount.toInt()} 元。"
+        } else {
+            ValidationStrings.getSuccessResponse(
+                lang = language,
+                dateStr = dateStr,
+                title = title,
+                amount = amount,
+                categoryCode = categoryCode,
+                isIncome = isIncome
+            ) + (if (apiErrorMessage != null) "\n(⚠️ 雲端API連線失敗，已自動降級離線模式: $apiErrorMessage)" else "")
+        }
 
         return ParsedTransaction(
             date = dateStr,
@@ -524,7 +556,8 @@ class GeminiBookkeepingParser {
             expense = expenseVal,
             aiResponse = responseMsg,
             isValid = true,
-            engineType = ParserEngineType.LOCAL_NLP
+            engineType = ParserEngineType.LOCAL_NLP,
+            isUpdate = isUpdate
         )
     }
 
