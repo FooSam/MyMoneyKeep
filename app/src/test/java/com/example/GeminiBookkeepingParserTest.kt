@@ -117,4 +117,18 @@ class GeminiBookkeepingParserTest {
         assertEquals("NT$500", AppCurrency.TWD.format(500.0))
         assertEquals("-$15.50", AppCurrency.USD.format(-15.5))
     }
+
+    @Test
+    fun testCandidateModelsAndEngineType() {
+        assertEquals("雲端 Gemini 智能引擎 (3.8+ 階梯備援)", ParserEngineType.CLOUD_GEMINI.displayName)
+        val models = GeminiBookkeepingParser.CANDIDATE_MODELS
+        assertEquals("gemini-3.8-flash", models.first())
+        assertEquals("gemini-2.5-flash", models.last())
+        assertTrue(models.contains("gemini-3.7-flash"))
+        assertTrue(models.contains("gemini-3.6-flash"))
+        assertTrue(models.contains("gemini-3.5-flash"))
+        assertTrue(models.contains("gemini-3.1-flash"))
+        assertTrue(models.contains("gemini-3.0-flash"))
+        assertEquals(7, models.size)
+    }
 }

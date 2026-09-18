@@ -22,6 +22,18 @@ import java.util.concurrent.TimeUnit
 
 class GeminiChatAgent {
 
+    companion object {
+        val CANDIDATE_MODELS = listOf(
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash",
+            "gemini-3.0-flash",
+            "gemini-2.5-flash"
+        )
+    }
+
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(25, TimeUnit.SECONDS)
@@ -38,98 +50,111 @@ class GeminiChatAgent {
         val apiKey = customApiKey?.trim() ?: ""
         var apiErrorMessage: String? = null
 
-        // 1. 若有 API Key，嘗試呼叫雲端 Gemini 模型
+        // 1. 若有 API Key，嘗試依序呼叫雲端 Gemini 模型 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 -> 2.5 階梯備援)
         if (apiKey.isNotBlank()) {
-            try {
-                val financialContext = buildFinancialContext(transactions, currency)
-                val systemPrompt = """
-                    你是一位專業、親切且具備敏銳財務洞察力的《MyMoneyKeep 雲端記帳》AI 財務顧問。
-                    你的任務是根據使用者的真實記帳數據，回答其財務收支問題、統計特定品項金額（如早餐、午餐、晚餐、飲食外食、交通購物等）、診斷消費習慣，並提供具體可執行的理財與省錢建議。
-                    
-                    【核心回答原則】：
-                    1. 必須一律使用繁體中文（台灣 zh-TW）親切回答。
-                    2. 若使用者詢問特定品項、日期或月份之花費（例如「8月的午餐總共多少」、「早午晚餐總共花了多少」）：
-                       - 必須仔細比對下方真實記帳明細中所有相關項目，精準計算總金額。
-                       - 清楚列出計算出的加總金額。
-                       - ⚠️ 若列出詳細消費明細紀錄，【必須嚴格依據時間日期由舊到新（時間順向/由早至晚，例如 8/1 -> 8/2 -> 8/3...）依序排列】。
-                    3. 排版保持簡潔清晰，善用 Emoji、條列式與加粗重點（例如 **NT${'$'}1,234**）。
-                    4. 嚴禁輸出任何英文思考過程、草稿或中斷不完整的語句，請直接輸出完整的繁體中文回覆。
-                    5. 若使用者詢問省錢或理財建議，請給予 3 點具體、可行且具建設性的步驟。
-                    
-                    【使用者真實記帳數據 Context】：
-                    $financialContext
-                """.trimIndent()
+            val financialContext = buildFinancialContext(transactions, currency)
+            val systemPrompt = """
+                你是一位專業、親切且具備敏銳財務洞察力的《MyMoneyKeep 雲端記帳》AI 財務顧問。
+                你的任務是根據使用者的真實記帳數據，回答其財務收支問題、統計特定品項金額（如早餐、午餐、晚餐、飲食外食、交通購物等）、診斷消費習慣，並提供具體可執行的理財與省錢建議。
+                
+                【核心回答原則】：
+                1. 必須一律使用繁體中文（台灣 zh-TW）親切回答。
+                2. 若使用者詢問特定品項、日期或月份之花費（例如「8月的午餐總共多少」、「早午晚餐總共花了多少」）：
+                   - 必須仔細比對下方真實記帳明細中所有相關項目，精準計算總金額。
+                   - 清楚列出計算出的加總金額。
+                   - ⚠️ 若列出詳細消費明細紀錄，【必須嚴格依據時間日期由舊到新（時間順向/由早至晚，例如 8/1 -> 8/2 -> 8/3...）依序排列】。
+                3. 排版保持簡潔清晰，善用 Emoji、條列式與加粗重點（例如 **NT${'$'}1,234**）。
+                4. 嚴禁輸出任何英文思考過程、草稿或中斷不完整的語句，請直接輸出完整的繁體中文回覆。
+                5. 若使用者詢問省錢或理財建議，請給予 3 點具體、可行且具建設性的步驟。
+                
+                【使用者真實記帳數據 Context】：
+                $financialContext
+            """.trimIndent()
 
-                val contentsArray = JSONArray()
+            val contentsArray = JSONArray()
 
-                // 加入過去最近 4 輪對話歷史 (避免 Context 超長)
-                val recentHistory = chatHistory.takeLast(8)
-                for (msg in recentHistory) {
-                    val role = if (msg.sender == ChatSender.USER) "user" else "model"
-                    contentsArray.put(JSONObject().apply {
-                        put("role", role)
-                        put("parts", JSONArray().put(JSONObject().put("text", msg.text)))
-                    })
-                }
-
-                // 加入當前使用者的問題
+            // 加入過去最近 4 輪對話歷史 (避免 Context 超長)
+            val recentHistory = chatHistory.takeLast(8)
+            for (msg in recentHistory) {
+                val role = if (msg.sender == ChatSender.USER) "user" else "model"
                 contentsArray.put(JSONObject().apply {
-                    put("role", "user")
-                    put("parts", JSONArray().put(JSONObject().put("text", userQuestion)))
+                    put("role", role)
+                    put("parts", JSONArray().put(JSONObject().put("text", msg.text)))
                 })
+            }
 
-                val jsonReq = JSONObject().apply {
-                    put("contents", contentsArray)
-                    put("systemInstruction", JSONObject().apply {
-                        put("parts", JSONArray().put(JSONObject().put("text", systemPrompt)))
-                    })
-                    put("generationConfig", JSONObject().apply {
-                        put("temperature", 0.3)
-                        put("maxOutputTokens", 4096)
-                        put("thinkingConfig", JSONObject().apply {
+            // 加入當前使用者的問題
+            contentsArray.put(JSONObject().apply {
+                put("role", "user")
+                put("parts", JSONArray().put(JSONObject().put("text", userQuestion)))
+            })
+
+            for (model in CANDIDATE_MODELS) {
+                try {
+                    val thinkingObj = JSONObject().apply {
+                        if (model.startsWith("gemini-3")) {
+                            put("thinkingLevel", "minimal")
+                        } else {
                             put("thinkingBudget", 0)
-                        })
-                    })
-                }
-
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
-                val requestBody = jsonReq.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url(url)
-                    .post(requestBody)
-                    .build()
-
-                val response = okHttpClient.newCall(request).execute()
-                val responseStr = response.body?.string()
-                if (response.isSuccessful && !responseStr.isNullOrBlank()) {
-                    val root = JSONObject(responseStr)
-                    val candidates = root.optJSONArray("candidates")
-                    if (candidates != null && candidates.length() > 0) {
-                        val candidate = candidates.getJSONObject(0)
-                        val content = candidate.optJSONObject("content")
-                        val parts = content?.optJSONArray("parts")
-                        if (parts != null && parts.length() > 0) {
-                            val textBuilder = StringBuilder()
-                            for (i in 0 until parts.length()) {
-                                val part = parts.getJSONObject(i)
-                                // 過濾內部思考過程 (thought: true)，只提取真正對話文字
-                                if (!part.optBoolean("thought", false)) {
-                                    val textPart = part.optString("text", "")
-                                    textBuilder.append(textPart)
-                                }
-                            }
-                            val finalText = textBuilder.toString().trim()
-                            if (finalText.isNotBlank()) {
-                                return@withContext finalText
-                            }
                         }
                     }
-                } else {
-                    apiErrorMessage = "HTTP ${response.code}: ${responseStr ?: "Unknown Error"}"
+
+                    val jsonReq = JSONObject().apply {
+                        put("contents", contentsArray)
+                        put("systemInstruction", JSONObject().apply {
+                            put("parts", JSONArray().put(JSONObject().put("text", systemPrompt)))
+                        })
+                        put("generationConfig", JSONObject().apply {
+                            put("temperature", 0.3)
+                            put("maxOutputTokens", 4096)
+                            put("thinkingConfig", thinkingObj)
+                        })
+                    }
+
+                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                    val requestBody = jsonReq.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url(url)
+                        .post(requestBody)
+                        .build()
+
+                    val response = okHttpClient.newCall(request).execute()
+                    val responseStr = response.body?.string()
+                    if (response.isSuccessful && !responseStr.isNullOrBlank()) {
+                        val root = JSONObject(responseStr)
+                        val candidates = root.optJSONArray("candidates")
+                        if (candidates != null && candidates.length() > 0) {
+                            val candidate = candidates.getJSONObject(0)
+                            val content = candidate.optJSONObject("content")
+                            val parts = content?.optJSONArray("parts")
+                            if (parts != null && parts.length() > 0) {
+                                val textBuilder = StringBuilder()
+                                for (i in 0 until parts.length()) {
+                                    val part = parts.getJSONObject(i)
+                                    // 過濾內部思考過程 (thought: true)，只提取真正對話文字
+                                    if (!part.optBoolean("thought", false)) {
+                                        val textPart = part.optString("text", "")
+                                        textBuilder.append(textPart)
+                                    }
+                                }
+                                val finalText = textBuilder.toString().trim()
+                                if (finalText.isNotBlank()) {
+                                    return@withContext finalText
+                                }
+                            }
+                        }
+                    } else {
+                        val code = response.code
+                        apiErrorMessage = "[$model] HTTP $code: ${responseStr ?: "Unknown Error"}"
+                        if (code == 401) {
+                            break
+                        }
+                        continue
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    apiErrorMessage = "[$model] ${e.localizedMessage ?: e.javaClass.simpleName}"
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                apiErrorMessage = e.localizedMessage ?: e.javaClass.simpleName
             }
         }
 

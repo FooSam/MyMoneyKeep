@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -84,7 +85,18 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
 
     LaunchedEffect(Unit) {
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+            val recognizer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+            ) {
+                try {
+                    SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+                } catch (e: Exception) {
+                    SpeechRecognizer.createSpeechRecognizer(context)
+                }
+            } else {
+                SpeechRecognizer.createSpeechRecognizer(context)
+            }
+
             recognizer.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
                     viewModel.setListening(true)
@@ -103,10 +115,17 @@ fun HomeScreen(viewModel: BookkeepingViewModel) {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val text = matches?.firstOrNull()
                     if (!text.isNullOrBlank()) {
+                        viewModel.updateChatInput(text)
                         viewModel.processInput(text)
                     }
                 }
-                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onPartialResults(partialResults: Bundle?) {
+                    val partialMatches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val partialText = partialMatches?.firstOrNull()
+                    if (!partialText.isNullOrBlank()) {
+                        viewModel.updateChatInput(partialText)
+                    }
+                }
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
             speechRecognizer = recognizer
@@ -346,6 +365,10 @@ private fun startListening(
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, langCode)
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+        }
     }
     try {
         viewModel.setListening(true)

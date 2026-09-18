@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 enum class ParserEngineType(val displayName: String, val badge: String) {
-    CLOUD_GEMINI("雲端 Gemini 1.5 Flash", "✨ 雲端 AI"),
+    CLOUD_GEMINI("雲端 Gemini 智能引擎 (3.8+ 階梯備援)", "✨ 雲端 AI"),
     EDGE_NANO("Gemini Nano 地端神經網路", "🧠 地端 Nano"),
     LOCAL_NLP("本地高階語意引擎", "⚡ 離線智能")
 }
@@ -122,6 +122,18 @@ object ValidationStrings {
 
 class GeminiBookkeepingParser {
 
+    companion object {
+        val CANDIDATE_MODELS = listOf(
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash",
+            "gemini-3.0-flash",
+            "gemini-2.5-flash"
+        )
+    }
+
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -138,130 +150,145 @@ class GeminiBookkeepingParser {
         val apiKey = customApiKey?.trim() ?: ""
         var apiErrorMessage: String? = null
 
-        // 第一軌：雲端 Gemini 3.5 Flash (BYOK 模式)
+        // 第一軌：雲端 Gemini 多代階梯降級備援 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 -> 2.5)
         if (apiKey.isNotBlank()) {
-            try {
-                val cal = Calendar.getInstance()
-                val todayStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
-                val year = cal.get(Calendar.YEAR)
-                val month = cal.get(Calendar.MONTH) + 1
-                val day = cal.get(Calendar.DAY_OF_MONTH)
-                val dayOfWeek = when (cal.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.SUNDAY -> "星期日"
-                    Calendar.MONDAY -> "星期一"
-                    Calendar.TUESDAY -> "星期二"
-                    Calendar.WEDNESDAY -> "星期三"
-                    Calendar.THURSDAY -> "星期四"
-                    Calendar.FRIDAY -> "星期五"
-                    Calendar.SATURDAY -> "星期六"
-                    else -> ""
-                }
+            val cal = Calendar.getInstance()
+            val todayStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
+            val year = cal.get(Calendar.YEAR)
+            val month = cal.get(Calendar.MONTH) + 1
+            val day = cal.get(Calendar.DAY_OF_MONTH)
+            val dayOfWeek = when (cal.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.SUNDAY -> "星期日"
+                Calendar.MONDAY -> "星期一"
+                Calendar.TUESDAY -> "星期二"
+                Calendar.WEDNESDAY -> "星期三"
+                Calendar.THURSDAY -> "星期四"
+                Calendar.FRIDAY -> "星期五"
+                Calendar.SATURDAY -> "星期六"
+                else -> ""
+            }
 
-                val systemPrompt = """
-                    你是一個極度精準的多語系智慧記帳 AI 助手。請分析使用者的自然語言記帳輸入，解析出日期、項目標題、記帳類別、金額，並輸出 JSON 格式。
-                    今天的基準時間為：${year}年${month}月${day}日 ($todayStr)，$dayOfWeek。
+            val systemPrompt = """
+                你是一個極度精準的多語系智慧記帳 AI 助手。請分析使用者的自然語言記帳輸入，解析出日期、項目標題、記帳類別、金額，並輸出 JSON 格式。
+                今天的基準時間為：${year}年${month}月${day}日 ($todayStr)，$dayOfWeek。
 
-                    【重要解析規則】：
-                    1. date (日期，格式必須為 YYYY/M/D，例如 2026/8/11)：
-                       - 若使用者提及相對時間（如「今天」、「明天」、「昨天」、「前天」、「大前天」、「後天」、「大後天」、「上週五」、「這禮拜三」、「8月15日」、「12/5」等），請務必以今天的基準日期 ($todayStr) 進行精確計算，輸出計算後的實際西元日期！
-                       - 若未提及任何時間，預設為今天的日期：$todayStr。
-                    2. title (項目標題)：
-                       - ⚠️【核心要求】：標題必須只保留「乾淨的純粹品項或事項名稱」（例如：「早餐」、「午餐」、「晚餐」、「加油」、「高鐵車票」、「衣服」、「飲料」）。
-                       - ⚠️【嚴禁包含】：絕對不可包含任何時間詞（如「今天」、「明天」、「昨天」、「前天」、「後天」）、贅字或動作語助詞（如「的」、「是」、「吃了」、「喝了」、「買了」、「花了」、「付了」、「去」、「大概」、「總共」）！
-                       - 範例 1：「今天早餐60」-> date: "$todayStr", title: "早餐", expense: 60
-                       - 範例 2：「今天的午餐是95」-> date: "$todayStr", title: "午餐", expense: 95
-                       - 範例 3：「明天早餐40」-> date: (明天的實際西元日期), title: "早餐", expense: 40
-                       - 範例 4：「昨天晚上去吃火鍋花了580元」-> date: (昨天的實際西元日期), title: "火鍋", expense: 580
-                    3. category (類別代碼，必須為 A, B, C, D 其中之一)：
-                       - A: 收入 (薪水, 獎金, 投資, 利息, 退費, 兼差)
-                       - B: 固定支出 (電話費, 卡費, 水電費, 房租, 寬頻, 保險, 驗車費, 瓦斯, 學費, 貸款)
-                       - C: 一般支出 (早餐, 午餐, 晚餐, 宵夜, 加油, 咖啡, 飲料, 買菜, 日用品, 超商)
-                       - D: 特別支出 (停車費, 罰單, 娛樂, 維修, 剪髮, 購物, 衣服, 旅行, 醫療, 看診, 禮金)
-                    4. income: 收入金額 (純數值，若為支出則填 null)
-                    5. expense: 支出金額 (純數值，若為收入則填 null)
-                    6. summary: 簡短回覆語句 (${language.displayName})
-                """.trimIndent()
+                【重要解析規則】：
+                1. date (日期，格式必須為 YYYY/M/D，例如 2026/8/11)：
+                   - 若使用者提及相對時間（如「今天」、「明天」、「昨天」、「前天」、「大前天」、「後天」、「大後天」、「上週五」、「這禮拜三」、「8月15日」、「12/5」等），請務必以今天的基準日期 ($todayStr) 進行精確計算，輸出計算後的實際西元日期！
+                   - 若未提及任何時間，預設為今天的日期：$todayStr。
+                2. title (項目標題)：
+                   - ⚠️【核心要求】：標題必須只保留「乾淨的純粹品項或事項名稱」（例如：「早餐」、「午餐」、「晚餐」、「加油」、「高鐵車票」、「衣服」、「飲料」）。
+                   - ⚠️【嚴禁包含】：絕對不可包含任何時間詞（如「今天」、「明天」、「昨天」、「前天」、「後天」）、贅字或動作語助詞（如「的」、「是」、「吃了」、「喝了」、「買了」、「花了」、「付了」、「去」、「大概」、「總共」）！
+                   - 範例 1：「今天早餐60」-> date: "$todayStr", title: "早餐", expense: 60
+                   - 範例 2：「今天的午餐是95」-> date: "$todayStr", title: "午餐", expense: 95
+                   - 範例 3：「明天早餐40」-> date: (明天的實際西元日期), title: "早餐", expense: 40
+                   - 範例 4：「昨天晚上去吃火鍋花了580元」-> date: (昨天的實際西元日期), title: "火鍋", expense: 580
+                3. category (類別代碼，必須為 A, B, C, D 其中之一)：
+                   - A: 收入 (薪水, 獎金, 投資, 利息, 退費, 兼差)
+                   - B: 固定支出 (電話費, 卡費, 水電費, 房租, 寬頻, 保險, 驗車費, 瓦斯, 學費, 貸款)
+                   - C: 一般支出 (早餐, 午餐, 晚餐, 宵夜, 加油, 咖啡, 飲料, 買菜, 日用品, 超商)
+                   - D: 特別支出 (停車費, 罰單, 娛樂, 維修, 剪髮, 購物, 衣服, 旅行, 醫療, 看診, 禮金)
+                4. income: 收入金額 (純數值，若為支出則填 null)
+                5. expense: 支出金額 (純數值，若為收入則填 null)
+                6. summary: 簡短回覆語句 (${language.displayName})
+            """.trimIndent()
 
-                val jsonReq = JSONObject().apply {
-                    put("contents", JSONArray().put(JSONObject().apply {
-                        put("parts", JSONArray().put(JSONObject().put("text", inputText)))
-                    }))
-                    put("systemInstruction", JSONObject().apply {
-                        put("parts", JSONArray().put(JSONObject().put("text", systemPrompt)))
-                    })
-                    put("generationConfig", JSONObject().apply {
-                        put("responseMimeType", "application/json")
-                        put("temperature", 0.1)
-                        put("maxOutputTokens", 2048)
-                        put("thinkingConfig", JSONObject().apply {
+            for (model in CANDIDATE_MODELS) {
+                try {
+                    val thinkingObj = JSONObject().apply {
+                        if (model.startsWith("gemini-3")) {
+                            put("thinkingLevel", "minimal")
+                        } else {
                             put("thinkingBudget", 0)
+                        }
+                    }
+
+                    val jsonReq = JSONObject().apply {
+                        put("contents", JSONArray().put(JSONObject().apply {
+                            put("parts", JSONArray().put(JSONObject().put("text", inputText)))
+                        }))
+                        put("systemInstruction", JSONObject().apply {
+                            put("parts", JSONArray().put(JSONObject().put("text", systemPrompt)))
                         })
-                    })
-                }
+                        put("generationConfig", JSONObject().apply {
+                            put("responseMimeType", "application/json")
+                            put("temperature", 0.1)
+                            put("maxOutputTokens", 2048)
+                            put("thinkingConfig", thinkingObj)
+                        })
+                    }
 
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
-                val requestBody = jsonReq.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url(url)
-                    .post(requestBody)
-                    .build()
+                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                    val requestBody = jsonReq.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url(url)
+                        .post(requestBody)
+                        .build()
 
-                val response = okHttpClient.newCall(request).execute()
-                val responseStr = response.body?.string()
-                if (response.isSuccessful && !responseStr.isNullOrBlank()) {
-                    val root = JSONObject(responseStr)
-                    val candidates = root.optJSONArray("candidates")
-                    if (candidates != null && candidates.length() > 0) {
-                        val candidate = candidates.getJSONObject(0)
-                        val content = candidate.optJSONObject("content")
-                        val parts = content?.optJSONArray("parts")
-                        if (parts != null && parts.length() > 0) {
-                            val textBuilder = StringBuilder()
-                            for (i in 0 until parts.length()) {
-                                val part = parts.getJSONObject(i)
-                                if (!part.optBoolean("thought", false)) {
-                                    textBuilder.append(part.optString("text", ""))
-                                }
-                            }
-                            val text = textBuilder.toString().trim()
-                            if (text.isNotBlank()) {
-                                val parsedJson = JSONObject(text)
-                                val date = if (parsedJson.has("date") && !parsedJson.isNull("date")) parsedJson.getString("date") else todayStr
-                                val rawTitle = if (parsedJson.has("title") && !parsedJson.isNull("title")) parsedJson.getString("title") else inputText
-                                val title = cleanTitleStopWords(rawTitle).ifBlank { rawTitle }
-                                val income = if (parsedJson.has("income") && !parsedJson.isNull("income")) parsedJson.getDouble("income") else null
-                                val expense = if (parsedJson.has("expense") && !parsedJson.isNull("expense")) parsedJson.getDouble("expense") else null
-                                val rawCategory = if (parsedJson.has("category") && !parsedJson.isNull("category")) parsedJson.getString("category") else null
-
-                                val hasAmount = (income != null && income > 0) || (expense != null && expense > 0)
-                                if (hasAmount && title.isNotBlank()) {
-                                    val category = rawCategory?.uppercase(Locale.ROOT) ?: CategoryType.inferCode(income != null, title)
-                                    val summary = if (parsedJson.has("summary") && !parsedJson.isNull("summary")) {
-                                        parsedJson.getString("summary")
-                                    } else {
-                                        ValidationStrings.getSuccessResponse(language, date, title, income ?: expense ?: 0.0, category, income != null, isLocal = false)
+                    val response = okHttpClient.newCall(request).execute()
+                    val responseStr = response.body?.string()
+                    if (response.isSuccessful && !responseStr.isNullOrBlank()) {
+                        val root = JSONObject(responseStr)
+                        val candidates = root.optJSONArray("candidates")
+                        if (candidates != null && candidates.length() > 0) {
+                            val candidate = candidates.getJSONObject(0)
+                            val content = candidate.optJSONObject("content")
+                            val parts = content?.optJSONArray("parts")
+                            if (parts != null && parts.length() > 0) {
+                                val textBuilder = StringBuilder()
+                                for (i in 0 until parts.length()) {
+                                    val part = parts.getJSONObject(i)
+                                    if (!part.optBoolean("thought", false)) {
+                                        textBuilder.append(part.optString("text", ""))
                                     }
+                                }
+                                val text = textBuilder.toString().trim()
+                                if (text.isNotBlank()) {
+                                    val parsedJson = JSONObject(text)
+                                    val date = if (parsedJson.has("date") && !parsedJson.isNull("date")) parsedJson.getString("date") else todayStr
+                                    val rawTitle = if (parsedJson.has("title") && !parsedJson.isNull("title")) parsedJson.getString("title") else inputText
+                                    val title = cleanTitleStopWords(rawTitle).ifBlank { rawTitle }
+                                    val income = if (parsedJson.has("income") && !parsedJson.isNull("income")) parsedJson.getDouble("income") else null
+                                    val expense = if (parsedJson.has("expense") && !parsedJson.isNull("expense")) parsedJson.getDouble("expense") else null
+                                    val rawCategory = if (parsedJson.has("category") && !parsedJson.isNull("category")) parsedJson.getString("category") else null
 
-                                    return@withContext ParsedTransaction(
-                                        date = date,
-                                        title = title,
-                                        category = category,
-                                        income = income,
-                                        expense = expense,
-                                        aiResponse = summary,
-                                        isValid = true,
-                                        engineType = ParserEngineType.CLOUD_GEMINI
-                                    )
+                                    val hasAmount = (income != null && income > 0) || (expense != null && expense > 0)
+                                    if (hasAmount && title.isNotBlank()) {
+                                        val category = rawCategory?.uppercase(Locale.ROOT) ?: CategoryType.inferCode(income != null, title)
+                                        val summary = if (parsedJson.has("summary") && !parsedJson.isNull("summary")) {
+                                            parsedJson.getString("summary")
+                                        } else {
+                                            ValidationStrings.getSuccessResponse(language, date, title, income ?: expense ?: 0.0, category, income != null, isLocal = false)
+                                        }
+
+                                        return@withContext ParsedTransaction(
+                                            date = date,
+                                            title = title,
+                                            category = category,
+                                            income = income,
+                                            expense = expense,
+                                            aiResponse = summary,
+                                            isValid = true,
+                                            engineType = ParserEngineType.CLOUD_GEMINI
+                                        )
+                                    }
                                 }
                             }
                         }
+                    } else {
+                        val code = response.code
+                        apiErrorMessage = "[$model] HTTP $code: ${responseStr ?: "Unknown Error"}"
+                        if (code == 401) {
+                            // 金鑰本身無效時直接中斷
+                            break
+                        }
+                        // 404 (模型已退役或不存在)、503 (伺服器忙碌) 等情況自動嘗試下一個備援模型
+                        continue
                     }
-                } else {
-                    apiErrorMessage = "HTTP ${response.code}: ${responseStr ?: "Unknown Error"}"
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    apiErrorMessage = "[$model] ${e.localizedMessage ?: e.javaClass.simpleName}"
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                apiErrorMessage = e.localizedMessage ?: e.javaClass.simpleName
             }
         }
 

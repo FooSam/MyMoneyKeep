@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.data.model.TransactionEntity
 import com.example.data.network.GeminiChatAgent
 import com.example.ui.viewmodel.AppCurrency
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -110,5 +111,18 @@ class GeminiChatAgentTest {
         assertTrue("午餐3 應在 午餐5 之前", idx3 < idx5)
         assertTrue("午餐5 應在 午餐11 之前", idx5 < idx11)
         assertTrue("午餐11 應在 午餐13 之前", idx11 < idx13)
+    }
+
+    @Test
+    fun testCandidateModels() {
+        val models = GeminiChatAgent.CANDIDATE_MODELS
+        assertEquals("gemini-3.8-flash", models.first())
+        assertEquals("gemini-2.5-flash", models.last())
+        assertTrue(models.contains("gemini-3.7-flash"))
+        assertTrue(models.contains("gemini-3.6-flash"))
+        assertTrue(models.contains("gemini-3.5-flash"))
+        assertTrue(models.contains("gemini-3.1-flash"))
+        assertTrue(models.contains("gemini-3.0-flash"))
+        assertEquals(7, models.size)
     }
 }
