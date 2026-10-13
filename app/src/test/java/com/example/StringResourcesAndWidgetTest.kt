@@ -64,7 +64,7 @@ class StringResourcesAndWidgetTest {
         assertEquals("架構說明", res.getString(R.string.sync_btn_architecture_guide))
         assertEquals("雲端試算表儲存架構說明", res.getString(R.string.sync_architecture_title))
         assertEquals("試算表全表CSV備份(複製/匯入)", res.getString(R.string.sync_csv_backup_title))
-        assertEquals("複製CSV試算表", res.getString(R.string.sync_btn_copy_csv))
+        assertEquals("複製 CSV", res.getString(R.string.sync_btn_copy_csv))
         assertEquals("關閉", res.getString(R.string.diag_btn_close))
     }
 

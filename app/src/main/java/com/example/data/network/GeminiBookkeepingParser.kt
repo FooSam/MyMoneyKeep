@@ -130,8 +130,7 @@ class GeminiBookkeepingParser {
             "gemini-3.6-flash",
             "gemini-3.5-flash",
             "gemini-3.1-flash",
-            "gemini-3.0-flash",
-            "gemini-2.5-flash"
+            "gemini-3.0-flash"
         )
     }
 
@@ -151,7 +150,7 @@ class GeminiBookkeepingParser {
         val apiKey = customApiKey?.trim() ?: ""
         var apiErrorMessage: String? = null
 
-        // 第一軌：雲端 Gemini 多代階梯降級備援 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 -> 2.5)
+        // 第一軌：雲端 Gemini 多代階梯降級備援 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0)
         if (apiKey.isNotBlank()) {
             val cal = Calendar.getInstance()
             val todayStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
@@ -175,20 +174,26 @@ class GeminiBookkeepingParser {
 
                 【重要解析規則】：
                 1. date (日期，格式必須為 YYYY/M/D，例如 2026/8/11)：
-                   - 若使用者提及相對時間（如「今天」、「明天」、「昨天」、「前天」、「大前天」、「後天」、「大後天」、「上週五」、「這禮拜三」、「8月15日」、「12/5」等），請務必以今天的基準日期 ($todayStr) 進行精確計算，輸出計算後的實際西元日期！
+                   - 若使用者提及相對時間（如「今天」、「明天」、「昨天」、「前天」、「大前天」、「後天」、「大後天」、「上週五」、「這禮拜三」、「剛才」、「剛剛」、「8月15日」、「12/5」等），請務必以今天的基準日期 ($todayStr) 進行精確計算，輸出計算後的實際西元日期！
                    - 若未提及任何時間，預設為今天的日期：$todayStr。
                 2. title (項目標題)：
-                   - ⚠️【核心要求】：標題必須只保留「乾淨的純粹品項或事項名稱」（例如：「早餐」、「午餐」、「晚餐」、「加油」、「高鐵車票」、「衣服」、「飲料」）。
-                   - ⚠️【嚴禁包含】：絕對不可包含任何時間詞（如「今天」、「明天」、「昨天」、「前天」、「後天」）、贅字或動作語助詞（如「的」、「是」、「吃了」、「喝了」、「買了」、「花了」、「付了」、「去」、「大概」、「總共」）！
-                   - 範例 1：「今天早餐60」-> date: "$todayStr", title: "早餐", expense: 60
-                   - 範例 2：「今天的午餐是95」-> date: "$todayStr", title: "午餐", expense: 95
-                   - 範例 3：「明天早餐40」-> date: (明天的實際西元日期), title: "早餐", expense: 40
-                   - 範例 4：「昨天晚上去吃火鍋花了580元」-> date: (昨天的實際西元日期), title: "火鍋", expense: 580
+                   - ⚠️【核心要求 - 嚴格保留具體品項與修飾詞】：必須完整保留使用者輸入之具體品項名稱與自訂修飾詞，絕對不可擅自簡化或削弱！
+                     * 例如使用者輸入「機車加油」或「汽車加油」，標題必須完整保留為「機車加油」或「汽車加油」，【嚴禁】簡化成「加油」！
+                     * 例如「中油加油」、「台塑加油」、「95加滿」必須保留原品項，【嚴禁】簡化為「加油」！
+                     * 例如「冰拿鐵」不可簡化為「咖啡」或「拿鐵」；「麥當勞午餐」不可簡化為「午餐」；「換機油」不可簡化為「保養」。
+                   - ⚠️【只去除贅詞】：只去除純相對時間詞（如「今天」、「明天」、「昨天」、「前天」、「後天」、「剛才」、「剛剛」）、純動作助詞（如「去吃」、「去買」、「去喝」、「吃了」、「喝了」、「買了」、「花了」、「付了」、「給了」、「去了」、「幫我記」、「記一下」、「記一筆」）與金額幣別（如「元」、「塊」、「NT$」、「$」）。
+                   - 範例 1：「今天機車加油125元」-> date: "$todayStr", title: "機車加油", category: "C", expense: 125
+                   - 範例 2：「昨天汽車加油800元」-> date: (昨天的實際西元日期), title: "汽車加油", category: "C", expense: 800
+                   - 範例 3：「今天早餐60」-> date: "$todayStr", title: "早餐", category: "C", expense: 60
+                   - 範例 4：「今天的午餐是95」-> date: "$todayStr", title: "午餐", category: "C", expense: 95
+                   - 範例 5：「明天早餐40」-> date: (明天的實際西元日期), title: "早餐", category: "C", expense: 40
+                   - 範例 6：「昨天晚上去吃火鍋花了580元」-> date: (昨天的實際西元日期), title: "火鍋", category: "C", expense: 580
+                   - 範例 7：「幫我記剛才換機油250」-> date: "$todayStr", title: "換機油", category: "D", expense: 250
                 3. category (類別代碼，必須為 A, B, C, D 其中之一)：
                    - A: 收入 (薪水, 獎金, 投資, 利息, 退費, 兼差)
                    - B: 固定支出 (電話費, 卡費, 水電費, 房租, 寬頻, 保險, 驗車費, 瓦斯, 學費, 貸款)
-                   - C: 一般支出 (早餐, 午餐, 晚餐, 宵夜, 加油, 咖啡, 飲料, 買菜, 日用品, 超商)
-                   - D: 特別支出 (停車費, 罰單, 娛樂, 維修, 剪髮, 購物, 衣服, 旅行, 醫療, 看診, 禮金)
+                   - C: 一般支出 (早餐, 午餐, 晚餐, 宵夜, 機車加油, 汽車加油, 加油, 咖啡, 飲料, 買菜, 日用品, 超商)
+                   - D: 特別支出 (機車保養, 汽車保養, 維修, 換機油, 停車費, 罰單, 娛樂, 剪髮, 購物, 衣服, 旅行, 醫療, 看診, 禮金)
                 4. income: 收入金額 (純數值，若為支出則填 null)
                 5. expense: 支出金額 (純數值，若為收入則填 null)
                 6. summary: 簡短回覆語句 (${language.displayName})
@@ -204,11 +209,7 @@ class GeminiBookkeepingParser {
             for (model in CANDIDATE_MODELS) {
                 try {
                     val thinkingObj = JSONObject().apply {
-                        if (model.startsWith("gemini-3")) {
-                            put("thinkingLevel", "minimal")
-                        } else {
-                            put("thinkingBudget", 0)
-                        }
+                        put("thinkingLevel", "minimal")
                     }
 
                     val jsonReq = JSONObject().apply {
@@ -333,25 +334,39 @@ class GeminiBookkeepingParser {
             .replace("修改", "")
             .replace("更正", "")
             .replace("改", "")
+            .replace("幫我記一下", "")
+            .replace("幫我記個帳", "")
+            .replace("幫我記", "")
+            .replace("幫我算", "")
+            .replace("記一筆", "")
+            .replace("記個帳", "")
+            .replace("記一下", "")
+            .replace("大前天", "")
+            .replace("前天", "")
+            .replace("大後天", "")
+            .replace("後天", "")
             .replace("今天", "")
             .replace("明天", "")
             .replace("昨天", "")
-            .replace("前天", "")
-            .replace("大前天", "")
-            .replace("後天", "")
-            .replace("大後天", "")
             .replace("今日", "")
             .replace("明日", "")
             .replace("昨日", "")
+            .replace("剛才", "")
+            .replace("剛剛", "")
             .replace("早上", "")
             .replace("中午", "")
             .replace("晚上", "")
             .replace("下午", "")
             .replace("上午", "")
+            .replace("今早", "")
+            .replace("今晚", "")
+            .replace("昨晚", "")
             .replace("夜間", "")
             .replace("半夜", "")
             .replace("去吃", "")
             .replace("去買", "")
+            .replace("去喝", "")
+            .replace("去加油", "加油")
             .replace("吃了", "")
             .replace("喝了", "")
             .replace("買了", "")
@@ -359,14 +374,21 @@ class GeminiBookkeepingParser {
             .replace("付了", "")
             .replace("給了", "")
             .replace("去了", "")
+            .replace("大概", "")
+            .replace("大約", "")
+            .replace("總共", "")
+            .replace("一共", "")
             .replace("的", "")
             .replace("是", "")
-            .replace("去", "")
             .trim()
 
         // 去除品項前贅詞動詞 (例如：吃牛肉麵 -> 牛肉麵, 繳房租 -> 房租, 買飲料 -> 飲料, 發薪水 -> 薪水)
-        val leadingVerbs = listOf("去吃", "去買", "去喝", "去", "吃", "喝", "買", "繳", "付", "發")
+        val leadingVerbs = listOf("去吃", "去買", "去喝", "去加油", "去", "吃", "喝", "買", "繳", "付", "發")
         for (v in leadingVerbs) {
+            // 特殊保護：例如「去骨雞腿」、「去漬油」、「去角質」之「去」不可被移除
+            if (v == "去" && (clean.startsWith("去骨") || clean.startsWith("去漬") || clean.startsWith("去角質"))) {
+                continue
+            }
             if (clean.startsWith(v) && clean.length > v.length) {
                 clean = clean.removePrefix(v).trim()
             }
@@ -381,7 +403,7 @@ class GeminiBookkeepingParser {
     /**
      * 高階本地 NLP 解析引擎：
      * 1. 支援中文大寫數字轉換 (例如：一百八 -> 180, 兩千五 -> 2500, 1.5萬 -> 15000)
-     * 2. 支援相對日期與星期 (今天, 昨天, 上週三, 這禮拜五等)
+     * 2. 支援相對日期與星期 (今天, 昨天, 上週三, 這禮拜五, 剛才, 剛剛等)
      * 3. 智慧類別關鍵字推斷與分數打分
      */
     fun parseLocalNlp(input: String, hasApiKey: Boolean, language: AppLanguage, apiErrorMessage: String? = null): ParsedTransaction {
@@ -389,6 +411,16 @@ class GeminiBookkeepingParser {
         var dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
 
         var workingText = convertChineseNumbers(input)
+
+        // 移除常見語音與口語前綴
+        workingText = workingText
+            .replace("幫我記一下", "")
+            .replace("幫我記個帳", "")
+            .replace("幫我記", "")
+            .replace("幫我算", "")
+            .replace("記一筆", "")
+            .replace("記個帳", "")
+            .replace("記一下", "")
 
         // 1. 相對時間詞辨識
         when {
@@ -402,10 +434,10 @@ class GeminiBookkeepingParser {
                 dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
                 workingText = workingText.replace("前天", "")
             }
-            workingText.contains("昨天") || workingText.contains("昨日") -> {
+            workingText.contains("昨天") || workingText.contains("昨日") || workingText.contains("昨晚") -> {
                 cal.add(Calendar.DAY_OF_MONTH, -1)
                 dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
-                workingText = workingText.replace("昨天", "").replace("昨日", "")
+                workingText = workingText.replace("昨天", "").replace("昨日", "").replace("昨晚", "")
             }
             workingText.contains("大後天") -> {
                 cal.add(Calendar.DAY_OF_MONTH, 3)
@@ -422,8 +454,10 @@ class GeminiBookkeepingParser {
                 dateStr = SimpleDateFormat("yyyy/M/d", Locale.TAIWAN).format(cal.time)
                 workingText = workingText.replace("明天", "").replace("明日", "")
             }
-            workingText.contains("今天") || workingText.contains("今日") -> {
-                workingText = workingText.replace("今天", "").replace("今日", "")
+            workingText.contains("今天") || workingText.contains("今日") || workingText.contains("剛才") ||
+                    workingText.contains("剛剛") || workingText.contains("今早") || workingText.contains("今晚") -> {
+                workingText = workingText.replace("今天", "").replace("今日", "").replace("剛才", "")
+                    .replace("剛剛", "").replace("今早", "").replace("今晚", "")
             }
             // 星期 / 禮拜 (如：上週五、這禮拜三)
             workingText.contains("上週") || workingText.contains("上星期") || workingText.contains("上禮拜") -> {
@@ -590,12 +624,13 @@ class GeminiBookkeepingParser {
         )
         if (bKeywords.any { lower.contains(it) }) return "B"
 
-        // D: 特別支出 (娛樂購物旅行醫療大額等)
+        // D: 特別支出 (娛樂購物旅行醫療大額、車輛保養維修等)
         val dKeywords = listOf(
             "衣服", "褲子", "鞋子", "包包", "購物", "網購", "蝦皮", "淘寶", "電影", "遊戲",
             "唱歌", "ktv", "旅行", "旅遊", "門票", "飯店", "住宿", "聚會", "喝酒", "玩具",
             "展覽", "健身", "演唱會", "看診", "醫藥", "醫療", "醫院", "診所", "掛號", "剪髮",
-            "美髮", "禮金", "維修", "保養", "罰單", "機票", "高鐵"
+            "美髮", "禮金", "維修", "保養", "機油", "齒輪油", "換輪胎", "補胎", "洗車",
+            "停車費", "停車", "過路費", "通行費", "etag", "罰單", "機票", "高鐵"
         )
         if (dKeywords.any { lower.contains(it) }) return "D"
 

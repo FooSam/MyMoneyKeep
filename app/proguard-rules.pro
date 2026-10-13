@@ -56,14 +56,23 @@
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
 
-# ── App 自有類別 (com.example 套件) & ViewModel ──────────────────────────────
--keep class com.example.** { *; }
+# ── App 自有類別精準混淆規則 (提升混淆率至 70%+ 並啟用深層資源縮減) ─────────
+# 1. 核心資料模型 (Room Entity、Moshi JSON 序列化類別，保證資料庫與 JSON 欄位對齊)
+-keep class com.example.data.model.** { *; }
+
+# 2. ViewModel 建構子反射保留 (ViewModelProvider 實例化必要)
 -keepclassmembers class * extends androidx.lifecycle.ViewModel {
     <init>(...);
 }
 -keepclassmembers class * extends androidx.lifecycle.AndroidViewModel {
     <init>(...);
 }
+
+# 3. 桌面小工具 Widget Provider
+-keep class com.example.widget.MyMoneyKeepWidgetProvider { *; }
+
+# 4. 簽章診斷工具 (安全排查使用)
+-keep class com.example.util.AppSignatureHelper { *; }
 
 # ── OkHttp 可選 TLS 提供者 (R8 自動偵測，加入 dontwarn 即可) ─────────────────
 # 這些是 OkHttp 在不同平台上的可選 TLS 實作，Android 不需要，忽略即可。

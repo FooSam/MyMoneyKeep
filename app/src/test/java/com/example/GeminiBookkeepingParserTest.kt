@@ -6,6 +6,7 @@ import com.example.data.network.ParserEngineType
 import com.example.ui.viewmodel.AppCurrency
 import com.example.ui.viewmodel.AppLanguage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -123,13 +124,51 @@ class GeminiBookkeepingParserTest {
         assertEquals("雲端 Gemini 智能引擎 (3.8+ 階梯備援)", ParserEngineType.CLOUD_GEMINI.displayName)
         val models = GeminiBookkeepingParser.CANDIDATE_MODELS
         assertEquals("gemini-3.8-flash", models.first())
-        assertEquals("gemini-2.5-flash", models.last())
+        assertEquals("gemini-3.0-flash", models.last())
         assertTrue(models.contains("gemini-3.7-flash"))
         assertTrue(models.contains("gemini-3.6-flash"))
         assertTrue(models.contains("gemini-3.5-flash"))
         assertTrue(models.contains("gemini-3.1-flash"))
-        assertTrue(models.contains("gemini-3.0-flash"))
-        assertEquals(7, models.size)
+        assertFalse(models.contains("gemini-2.5-flash"))
+        assertEquals(6, models.size)
+    }
+
+    @Test
+    fun testSpecificVehicleAndSpeechPrefixParsing() {
+        // 1. 測試「今天機車加油125元」：確保標題完整保留「機車加油」，不被過度精簡為「加油」
+        val res1 = parser.parseLocalNlp("今天機車加油125元", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res1.isValid)
+        assertEquals("機車加油", res1.title)
+        assertEquals(125.0, res1.expense ?: 0.0, 0.001)
+        assertEquals("C", res1.category)
+
+        // 2. 測試「昨天汽車加油800元」：確保標題完整保留「汽車加油」
+        val res2 = parser.parseLocalNlp("昨天汽車加油800元", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res2.isValid)
+        assertEquals("汽車加油", res2.title)
+        assertEquals(800.0, res2.expense ?: 0.0, 0.001)
+        assertEquals("C", res2.category)
+
+        // 3. 測試常見語音口語前綴「幫我記剛才機車加油125」：口語前綴濾除且品項精確保留
+        val res3 = parser.parseLocalNlp("幫我記剛才機車加油125", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res3.isValid)
+        assertEquals("機車加油", res3.title)
+        assertEquals(125.0, res3.expense ?: 0.0, 0.001)
+        assertEquals("C", res3.category)
+
+        // 4. 測試「去骨雞腿便當110元」：驗證「去骨」之「去」未被誤當成贅詞去除
+        val res4 = parser.parseLocalNlp("去骨雞腿便當110元", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res4.isValid)
+        assertEquals("去骨雞腿便當", res4.title)
+        assertEquals(110.0, res4.expense ?: 0.0, 0.001)
+        assertEquals("C", res4.category)
+
+        // 5. 測試車輛保養「換機油250元」：類別精準歸入特別支出/保養 D
+        val res5 = parser.parseLocalNlp("換機油250元", hasApiKey = false, language = AppLanguage.TRADITIONAL_CHINESE)
+        assertTrue(res5.isValid)
+        assertEquals("換機油", res5.title)
+        assertEquals(250.0, res5.expense ?: 0.0, 0.001)
+        assertEquals("D", res5.category)
     }
 
     @Test

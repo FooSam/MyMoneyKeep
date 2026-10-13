@@ -34,8 +34,15 @@ object AdManager {
     // Google 官方測試插頁式廣告單元 ID
     const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
 
+    // 正式橫幅廣告單元 ID
+    const val PROD_BANNER_AD_UNIT_ID = "ca-app-pub-5014630903713895/7898220557"
+
+    // Google 官方測試橫幅廣告單元 ID
+    const val TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+
     // 支援測試或特定情境覆寫
     var overrideAdUnitId: String? = null
+    var overrideBannerAdUnitId: String? = null
 
     @Volatile
     private var interstitialAd: InterstitialAd? = null
@@ -54,6 +61,18 @@ object AdManager {
             TEST_INTERSTITIAL_AD_UNIT_ID
         } else {
             PROD_INTERSTITIAL_AD_UNIT_ID
+        }
+    }
+
+    /**
+     * 取得當前適用的橫幅廣告單元 ID
+     */
+    fun getBannerAdUnitId(): String {
+        overrideBannerAdUnitId?.let { return it }
+        return if (BuildConfig.DEBUG) {
+            TEST_BANNER_AD_UNIT_ID
+        } else {
+            PROD_BANNER_AD_UNIT_ID
         }
     }
 
@@ -226,5 +245,6 @@ object AdManager {
         interstitialAd = null
         isLoadingAd = false
         overrideAdUnitId = null
+        overrideBannerAdUnitId = null
     }
 }

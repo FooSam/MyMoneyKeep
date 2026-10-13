@@ -685,21 +685,29 @@ fun SyncScreen(viewModel: BookkeepingViewModel) {
                                             Toast.makeText(context, context.getString(R.string.sync_toast_csv_copied), Toast.LENGTH_LONG).show()
                                         },
                                         modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         shape = RoundedCornerShape(10.dp)
                                     ) {
                                         Icon(Icons.Default.ContentCopy, contentDescription = "Copy CSV", modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(stringResource(R.string.sync_btn_copy_csv))
+                                        Text(
+                                            text = stringResource(R.string.sync_btn_copy_csv),
+                                            maxLines = 1
+                                        )
                                     }
 
                                     OutlinedButton(
                                         onClick = { showImportDialog = true },
                                         modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         shape = RoundedCornerShape(10.dp)
                                     ) {
                                         Icon(Icons.Default.Download, contentDescription = "Paste CSV", modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(stringResource(R.string.sync_btn_paste_csv))
+                                        Text(
+                                            text = stringResource(R.string.sync_btn_paste_csv),
+                                            maxLines = 1
+                                        )
                                     }
                                 }
                             }

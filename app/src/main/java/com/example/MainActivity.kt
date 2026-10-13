@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
+import com.example.ui.components.BannerAdView
 import com.example.ui.screens.CurrencyCalculatorScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LedgerScreen
@@ -248,22 +249,29 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { innerPadding ->
-                            Surface(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(innerPadding)
                             ) {
-                                when (selectedTab) {
-                                    NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
-                                    NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
-                                    NavigationTab.EXCHANGE -> CurrencyCalculatorScreen(
-                                        viewModel = viewModel,
-                                        onNavigateToLedgerWithPrefill = {
-                                            selectedTab = NavigationTab.LEDGER
-                                        }
-                                    )
-                                    NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
-                                    NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
+                                BannerAdView()
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                ) {
+                                    when (selectedTab) {
+                                        NavigationTab.HOME -> HomeScreen(viewModel = viewModel)
+                                        NavigationTab.LEDGER -> LedgerScreen(viewModel = viewModel)
+                                        NavigationTab.EXCHANGE -> CurrencyCalculatorScreen(
+                                            viewModel = viewModel,
+                                            onNavigateToLedgerWithPrefill = {
+                                                selectedTab = NavigationTab.LEDGER
+                                            }
+                                        )
+                                        NavigationTab.REPORTS -> ReportsScreen(viewModel = viewModel)
+                                        NavigationTab.SYNC -> SyncScreen(viewModel = viewModel)
+                                    }
                                 }
                             }
                         }

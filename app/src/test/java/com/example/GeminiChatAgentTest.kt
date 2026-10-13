@@ -5,6 +5,7 @@ import com.example.data.model.TransactionEntity
 import com.example.data.network.GeminiChatAgent
 import com.example.ui.viewmodel.AppCurrency
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -117,12 +118,12 @@ class GeminiChatAgentTest {
     fun testCandidateModels() {
         val models = GeminiChatAgent.CANDIDATE_MODELS
         assertEquals("gemini-3.8-flash", models.first())
-        assertEquals("gemini-2.5-flash", models.last())
+        assertEquals("gemini-3.0-flash", models.last())
         assertTrue(models.contains("gemini-3.7-flash"))
         assertTrue(models.contains("gemini-3.6-flash"))
         assertTrue(models.contains("gemini-3.5-flash"))
         assertTrue(models.contains("gemini-3.1-flash"))
-        assertTrue(models.contains("gemini-3.0-flash"))
-        assertEquals(7, models.size)
+        assertFalse(models.contains("gemini-2.5-flash"))
+        assertEquals(6, models.size)
     }
 }

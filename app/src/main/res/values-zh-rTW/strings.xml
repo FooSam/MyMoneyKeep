@@ -106,7 +106,7 @@
 
     <string name="sync_csv_backup_title">試算表全表CSV備份(複製/匯入)</string>
     <string name="sync_csv_backup_desc">支援將目前所有記帳紀錄一鍵複製為標準 CSV 格式，或將外部 CSV 貼上匯入</string>
-    <string name="sync_btn_copy_csv">複製CSV試算表</string>
+    <string name="sync_btn_copy_csv">複製 CSV</string>
     <string name="sync_btn_paste_csv">貼上 CSV</string>
     <string name="sync_paste_csv_title">貼上 CSV 數據匯入</string>
     <string name="sync_paste_csv_placeholder">在此貼上 CSV 格式內容...</string>

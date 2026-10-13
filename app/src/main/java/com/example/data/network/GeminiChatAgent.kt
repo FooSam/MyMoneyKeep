@@ -29,8 +29,7 @@ class GeminiChatAgent {
             "gemini-3.6-flash",
             "gemini-3.5-flash",
             "gemini-3.1-flash",
-            "gemini-3.0-flash",
-            "gemini-2.5-flash"
+            "gemini-3.0-flash"
         )
     }
 
@@ -50,7 +49,7 @@ class GeminiChatAgent {
         val apiKey = customApiKey?.trim() ?: ""
         var apiErrorMessage: String? = null
 
-        // 1. 若有 API Key，嘗試依序呼叫雲端 Gemini 模型 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 -> 2.5 階梯備援)
+        // 1. 若有 API Key，嘗試依序呼叫雲端 Gemini 模型 (3.8 -> 3.7 -> 3.6 -> 3.5 -> 3.1 -> 3.0 階梯備援)
         if (apiKey.isNotBlank()) {
             val financialContext = buildFinancialContext(transactions, currency)
             val systemPrompt = """
@@ -92,11 +91,7 @@ class GeminiChatAgent {
             for (model in CANDIDATE_MODELS) {
                 try {
                     val thinkingObj = JSONObject().apply {
-                        if (model.startsWith("gemini-3")) {
-                            put("thinkingLevel", "minimal")
-                        } else {
-                            put("thinkingBudget", 0)
-                        }
+                        put("thinkingLevel", "minimal")
                     }
 
                     val jsonReq = JSONObject().apply {

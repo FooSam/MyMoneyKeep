@@ -106,7 +106,7 @@
 
     <string name="sync_csv_backup_title">表格全表CSV备份(复制/导入)</string>
     <string name="sync_csv_backup_desc">支持将当前所有记账记录一键复制为标准 CSV 格式，或将外部 CSV 粘贴导入</string>
-    <string name="sync_btn_copy_csv">复制CSV表格</string>
+    <string name="sync_btn_copy_csv">复制 CSV</string>
     <string name="sync_btn_paste_csv">粘贴 CSV</string>
     <string name="sync_paste_csv_title">粘贴 CSV 数据导入</string>
     <string name="sync_paste_csv_placeholder">在此粘贴 CSV 格式内容...</string>

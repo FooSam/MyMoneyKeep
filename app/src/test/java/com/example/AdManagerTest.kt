@@ -39,6 +39,20 @@ class AdManagerTest {
     }
 
     @Test
+    fun testBannerAdUnitIdConfiguration() {
+        // 驗證正式橫幅廣告 ID 正確配置
+        assertEquals("ca-app-pub-5014630903713895/7898220557", AdManager.PROD_BANNER_AD_UNIT_ID)
+
+        // 預設 (在測試環境/Debug 下應為 Google 官方測試橫幅 ID)
+        val defaultBannerId = AdManager.getBannerAdUnitId()
+        assertEquals(AdManager.TEST_BANNER_AD_UNIT_ID, defaultBannerId)
+
+        // 測試覆寫橫幅 ID
+        AdManager.overrideBannerAdUnitId = "custom_banner_test_456"
+        assertEquals("custom_banner_test_456", AdManager.getBannerAdUnitId())
+    }
+
+    @Test
     fun testIsRunningInTestEnvironment() {
         assertTrue("Should detect Robolectric test environment", AdManager.isRunningInTestEnvironment())
     }
